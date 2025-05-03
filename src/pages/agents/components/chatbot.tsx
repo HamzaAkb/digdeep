@@ -107,16 +107,15 @@ const messages = [
 
 function Chatbot() {
   return (
-    <div className='px-8'>
-      <div className='flex-1/2 max-w-4xl flex flex-col justify-between h-[94vh]'>
-        <div className='flex-1 overflow-y-auto overflow-x-hidden'>
+    <div className='px-6'>
+      <div className='flex-1/2 max-w-4xl flex flex-col justify-between h-[90vh]'>
+        <div className='flex-1 overflow-y-auto overflow-x-hidden mb-6'>
           {messages.map((message, index) => (
             <div
               key={index}
               className={`${
-                message.sender === 'user'
-                  && 'bg-muted border'
-              } rounded text-sm px-4 py-2 mb-4 max-w-[95%]`}
+                message.sender === 'user' && 'bg-sidebar border'
+              } rounded-3xl text-sm px-4 py-2 mb-4 max-w-[95%]`}
             >
               {message.message}
             </div>

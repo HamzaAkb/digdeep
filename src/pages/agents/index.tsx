@@ -10,44 +10,38 @@ import {
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
 import Chatbot from './components/chatbot'
+import Tools from './components/tools'
 
 function Agents() {
   return (
     <>
       <SidebarProvider>
         <AppSidebar />
-        <main className='w-full h-[100vh]'>
-          <SidebarTrigger />
-          <div className='flex justify-center'>
+        <main className='w-full h-[100vh] mx-6'>
+          <div className='flex items-center mt-2'>
+            <SidebarTrigger />
+            <div className='ml-2 font-bold'>Landing Agent</div>
+          </div>
+          <div className='flex justify-center mt-8'>
             <ResizablePanelGroup direction='horizontal'>
               <ResizablePanel defaultSize={35}>
                 <Chatbot />
               </ResizablePanel>
-              <ResizableHandle />
-              <ResizablePanel>
-                {' '}
-                <div className='flex-1/2'>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Aliquam eu sagittis nulla. Donec suscipit aliquam blandit.
-                  Integer magna dui, efficitur ut mattis nec, vestibulum vitae
-                  lacus. Nunc efficitur congue est ut scelerisque. Integer
-                  laoreet sit amet turpis ac consequat. Mauris nec dapibus
-                  felis. Proin sollicitudin, ante sed posuere molestie, urna
-                  dolor pulvinar sapien, eget mattis sapien magna at nisl. Sed
-                  non faucibus lectus. Aliquam venenatis, justo tincidunt
-                  aliquam iaculis, felis lorem mattis leo, placerat faucibus
-                  tortor risus sit amet velit. Quisque ante lectus, finibus non
-                  tincidunt vel, scelerisque vel ante. Donec sed odio sem.
-                </div>
+              <ResizableHandle
+                withHandle
+                className='border border-white dark:border-black'
+              />
+              <ResizablePanel className='border rounded-lg'>
+                <Tools />
               </ResizablePanel>
             </ResizablePanelGroup>
-            <div>
+            {/* <div>
               <SidebarProvider defaultOpen={false}>
                 <Sidebar collapsible='icon' side='right'>
                   <SidebarTrigger />
                 </Sidebar>
               </SidebarProvider>
-            </div>
+            </div> */}
           </div>
         </main>
       </SidebarProvider>

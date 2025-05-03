@@ -9,6 +9,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+import Chatbot from './components/chatbot'
 
 function Agents() {
   return (
@@ -19,25 +20,8 @@ function Agents() {
           <SidebarTrigger />
           <div className='flex justify-center'>
             <ResizablePanelGroup direction='horizontal'>
-              <ResizablePanel>
-                <div className='flex-1/2 max-w-4xl flex flex-col justify-between h-[90vh]'>
-                  <div className='flex-1 overflow-y-auto overflow-x-hidden'>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Aliquam eu sagittis nulla. Donec suscipit aliquam blandit.
-                    Integer magna dui, efficitur ut mattis nec, vestibulum vitae
-                    lacus. Nunc efficitur congue est ut scelerisque. Integer
-                    laoreet sit amet turpis ac consequat. Mauris nec dapibus
-                    felis. Proin sollicitudin, ante sed posuere molestie, urna
-                    dolor pulvinar sapien, eget mattis sapien magna at nisl. Sed
-                    non faucibus lectus. Aliquam venenatis, justo tincidunt
-                    aliquam iaculis, felis lorem mattis leo, placerat faucibus
-                    tortor risus sit amet velit. Quisque ante lectus, finibus
-                    non tincidunt vel, scelerisque vel ante. Donec sed odio sem.
-                  </div>
-                  <div>
-                    <input placeholder='Type here' />
-                  </div>
-                </div>
+              <ResizablePanel defaultSize={35}>
+                <Chatbot />
               </ResizablePanel>
               <ResizableHandle />
               <ResizablePanel>

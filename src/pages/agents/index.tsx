@@ -31,7 +31,7 @@ function Agents() {
                 withHandle
                 className='border border-white dark:border-black'
               />
-              <ResizablePanel className='border rounded-lg'>
+              <ResizablePanel className='border rounded-lg hidden md:block'>
                 <Tools />
               </ResizablePanel>
             </ResizablePanelGroup>

@@ -1,6 +1,6 @@
 function Tools() {
   return (
-    <div className='h-full'>
+    <div className='h-[90vh]'>
       <div className='border-b py-3'>
         <div className='inline px-10 py-3 border-b-3 border-gray-800 dark:border-white '>
           Files
@@ -12,7 +12,7 @@ function Tools() {
           <div className='px-3 py-6 h-full border-r w-[150px]'>
             Hello, World
           </div>
-          <div className='flex-1 px-3 py-6'>
+          <div className='flex-1 px-3 py-6 overflow-y-auto mb-16'>
             <pre className='bg-muted p-4 rounded text-sm whitespace-pre-wrap border'>
               TXT test file Purpose: Provide example of this file type Document
               file type: TXT Version: 1.0 Remark: Example content: The names

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar'
 import { ModeToggle } from './mode-toggle'
 import { AlignHorizontalSpaceBetween, Plus } from 'lucide-react'
-import { Separator } from './ui/separator'
+import { Separator } from '@/components/ui/separator'
 
 export function AppSidebar() {
   return (

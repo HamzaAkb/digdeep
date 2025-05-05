@@ -9,7 +9,6 @@ import {
   SidebarHeader,
 } from '@/components/ui/sidebar'
 import { ModeToggle } from './mode-toggle'
-import { AlignHorizontalSpaceBetween } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import SessionDialog from '@/pages/agents/components/session-dialog'
 
@@ -18,7 +17,8 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className='flex items-center gap-2 ml-1 my-2'>
-          <AlignHorizontalSpaceBetween />
+          {/* <AlignHorizontalSpaceBetween /> */}
+          <img className='size-6' src='../../public/vite.svg' />
           <span className='font-semibold text-lg'>Dig Deep</span>
         </div>
         <Separator />

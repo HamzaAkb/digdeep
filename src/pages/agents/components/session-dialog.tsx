@@ -135,26 +135,33 @@ export default function SessionDialog() {
         )}
 
         {step === 1 && (
-          <div className='flex flex-col gap-4'>
-            <Label>What format are your CSV columns in?</Label>
-            <Textarea placeholder='e.g. dates are YYYY-MM-DD, amounts in USD' />
-            <Label>Anything else we should know?</Label>
-            <Textarea placeholder='e.g. missing headers, special delimiters' />
+          <div className='flex flex-col gap-6'>
+            <div>
+              <Label>What format are your CSV columns in?</Label>
+              <Textarea placeholder='e.g. dates are YYYY-MM-DD, amounts in USD' />
+            </div>
+            <div>
+              <Label>Anything else we should know?</Label>
+              <Textarea placeholder='e.g. missing headers, special delimiters' />
+            </div>
           </div>
         )}
 
-        <DialogFooter className='sm:justify-end'>
-          <DialogClose asChild>
-            <Button variant='secondary'>Close</Button>
-          </DialogClose>
+        <DialogFooter className='sm:justify-end space-x-2'>
           {step === 0 ? (
-            <Button
-              onClick={() => {
-                setStep(1)
-              }}
-            >
-              Next
-            </Button>
+            <DialogClose asChild>
+              <Button variant='secondary'>Close</Button>
+            </DialogClose>
+          ) : (
+            <>
+              <Button variant='secondary' onClick={() => setStep(0)}>
+                Back
+              </Button>
+            </>
+          )}
+
+          {step === 0 ? (
+            <Button onClick={() => setStep(1)}>Next</Button>
           ) : (
             <Button onClick={() => {}}>Submit</Button>
           )}

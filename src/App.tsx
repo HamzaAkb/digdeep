@@ -1,6 +1,6 @@
+import Agents from '@/pages/agents'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import Agents from '@/pages/agents'
 
 function App() {
   return (

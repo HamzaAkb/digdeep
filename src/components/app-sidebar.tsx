@@ -9,8 +9,9 @@ import {
   SidebarHeader,
 } from '@/components/ui/sidebar'
 import { ModeToggle } from './mode-toggle'
-import { AlignHorizontalSpaceBetween, Plus } from 'lucide-react'
+import { AlignHorizontalSpaceBetween } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import SessionDialog from '@/pages/agents/components/session-dialog'
 
 export function AppSidebar() {
   return (
@@ -24,10 +25,12 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Sessions</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus /> <span className='sr-only'>Create Session</span>
-          </SidebarGroupAction>
+          <div className='flex items-center'>
+            <SidebarGroupLabel>Sessions</SidebarGroupLabel>
+            <SidebarGroupAction>
+              <SessionDialog />
+            </SidebarGroupAction>
+          </div>
           <SidebarGroupContent></SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import SessionSetupStep from './session-setup'
 import ClarificationStep, { QuestionBlock } from './clarification'
-import { Button } from '@/components/ui/button'
 
 const API_BASE = import.meta.env.VITE_API_URL
 const TOKEN = import.meta.env.VITE_TOKEN
@@ -65,11 +65,21 @@ export default function SessionDialog() {
           const err = await uploadRes.json()
           throw new Error(err.detail || uploadRes.statusText)
         }
-        const uploadJson = await uploadRes.json()
-        setFormQuestions(uploadJson.form.questions as QuestionBlock[])
-      }
 
-      setStep(1)
+        const uploadJson = await uploadRes.json()
+        const questions = (uploadJson.form.questions ?? []) as QuestionBlock[]
+
+        if (questions.length === 0) {
+          window.location.href = `/session/${sessionId}`
+          return
+        }
+
+        setFormQuestions(questions)
+        setStep(1)
+      } else {
+        window.location.href = `/session/${sessionId}`
+        return
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -114,6 +124,7 @@ export default function SessionDialog() {
       <DialogTrigger>
         <Plus className='size-4 cursor-pointer' />
       </DialogTrigger>
+
       <DialogContent className='!max-w-none w-[800px] max-h-[80vh] flex flex-col'>
         <DialogHeader>
           <DialogTitle>
@@ -161,7 +172,7 @@ export default function SessionDialog() {
           {step === 0 ? (
             <Button onClick={handleNext} disabled={loading}>
               {loading && <Loader2 className='animate-spin h-4 w-4' />}
-              Next
+              Create
             </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={loading}>

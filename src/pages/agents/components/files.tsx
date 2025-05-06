@@ -51,7 +51,7 @@ export default function Files() {
       }
     }
     poll()
-    const id = setInterval(poll, 2000)
+    const id = setInterval(poll, 10000)
     return () => {
       cancelled = true
       clearInterval(id)

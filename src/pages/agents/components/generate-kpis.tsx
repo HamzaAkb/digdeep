@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useContext } from 'react'
 import { useParams } from 'react-router'
-import { Textarea } from '@/components/ui/textarea'
 import { SendHorizontal } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { ChatContext } from '@/contexts/chat-context'
 
 type KPI = {
   title: string
@@ -10,6 +11,7 @@ type KPI = {
 
 export default function GenerateKPIs() {
   const { sessionId } = useParams<{ sessionId: string }>()
+  const { sendTask } = useContext(ChatContext)
   const [goal, setGoal] = useState('')
   const [kpis, setKpis] = useState<KPI[]>([])
   const [loading, setLoading] = useState(false)
@@ -40,11 +42,12 @@ export default function GenerateKPIs() {
       }
       const data = await res.json()
       const complex = data.tasks?.complex_kpis ?? []
-      const mapped: KPI[] = complex.map((item: any) => ({
-        title: item.kpi_name,
-        description: item.description,
-      }))
-      setKpis(mapped)
+      setKpis(
+        complex.map((item: any) => ({
+          title: item.kpi_name,
+          description: item.description,
+        }))
+      )
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -58,12 +61,6 @@ export default function GenerateKPIs() {
       generate()
     }
   }
-
-  if (!sessionId) {
-    return <div className='p-4 text-red-600'>No session ID in URL.</div>
-  }
-
-  const skeletonCount = 6
 
   return (
     <div className='h-full p-4'>
@@ -88,7 +85,7 @@ export default function GenerateKPIs() {
 
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
         {loading
-          ? Array.from({ length: skeletonCount }).map((_, idx) => (
+          ? Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
                 className='border rounded-lg p-4 animate-pulse space-y-4'
@@ -102,6 +99,7 @@ export default function GenerateKPIs() {
               <div
                 key={idx}
                 className='border rounded-lg p-4 hover:shadow-md transition cursor-pointer'
+                onClick={() => sendTask(kpi.description)}
               >
                 <div className='font-semibold mb-2'>{kpi.title}</div>
                 <div className='text-sm text-gray-600'>{kpi.description}</div>

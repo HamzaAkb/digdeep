@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'react-router'
 import ReactMarkdown from 'react-markdown'
 import { Download } from 'lucide-react'
 
@@ -8,18 +9,21 @@ interface FileMeta {
   modified: number
 }
 
-const SESSION_ID = '111f8bc2-648e-4854-a9bc-23035f5260d0'
-const BASE_URL = `http://127.0.0.1:8000/api/v1/session/${SESSION_ID}/outputs`
-const ACCESS_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYXNpaDk4IiwiZXhwIjoxNzQ2Mzc2MDkzLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.GS6xzkG2NYlMmbxT7tIowgBK5ZhwT4iyCFF_wvXkN8w' // your full ASCII token
+const ACCESS_TOKEN = import.meta.env.VITE_TOKEN
 
 export default function Files() {
+  const { sessionId } = useParams<{ sessionId: string }>()
+
   const [files, setFiles] = useState<FileMeta[]>([])
   const [selected, setSelected] = useState<FileMeta | null>(null)
   const [textContent, setTextContent] = useState<string>('')
   const [imgUrl, setImgUrl] = useState<string>('')
   const [csvData, setCsvData] = useState<string[][]>([])
   const sinceRef = useRef<number>(1746361047)
+
+  const BASE_URL = `${
+    import.meta.env.VITE_API_URL
+  }/session/${sessionId}/outputs`
 
   // Poll for new files
   useEffect(() => {

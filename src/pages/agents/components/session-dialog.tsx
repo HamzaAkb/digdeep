@@ -14,9 +14,8 @@ import SessionSetupStep from './session-setup'
 import ClarificationStep, { QuestionBlock } from './clarification'
 import { Button } from '@/components/ui/button'
 
-const API_BASE = 'http://localhost:8000/api/v1'
-const TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYXNpaDk4IiwiZXhwIjoxNzQ2NTExMzQ0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.Fnc7W7Z_SMBnMojMNoPphm1lbbE32KqRy2U5ocCXTVo'
+const API_BASE = import.meta.env.VITE_API_URL
+const TOKEN = import.meta.env.VITE_TOKEN
 
 export default function SessionDialog() {
   const [step, setStep] = useState(0)

@@ -1,13 +1,5 @@
-import { useRef, useState } from 'react'
-import {
-  Plus,
-  Paperclip,
-  X,
-  FileSpreadsheet,
-  Image as ImageIcon,
-  FileType2,
-  Loader2,
-} from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogTrigger,
@@ -18,24 +10,15 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
+import SessionSetupStep from './session-setup'
+import ClarificationStep, { QuestionBlock } from './clarification'
 import { Button } from '@/components/ui/button'
 
 const API_BASE = 'http://localhost:8000/api/v1'
 const TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYXNpaDk4IiwiZXhwIjoxNzQ2NTA5Mjc2LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.GM-ALy6TkrcOZkKeN1WB06LbzP-Fbdu4831yNWXLDhs'
-
-type QuestionBlock = {
-  field: string
-  source: string
-  questions: string[]
-  answers: string[]
-}
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYXNpaDk4IiwiZXhwIjoxNzQ2NTExMzQ0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.Fnc7W7Z_SMBnMojMNoPphm1lbbE32KqRy2U5ocCXTVo'
 
 export default function SessionDialog() {
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState(0)
   const [sessionId] = useState(() => crypto.randomUUID())
   const [name, setName] = useState('')
@@ -44,16 +27,6 @@ export default function SessionDialog() {
   const [formQuestions, setFormQuestions] = useState<QuestionBlock[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const handleAttachClick = () => fileInputRef.current?.click()
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files
-    if (!fileList) return
-    setFiles((prev) => [...prev, ...Array.from(fileList)])
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-  const handleRemoveFile = (idx: number) =>
-    setFiles((prev) => prev.filter((_, i) => i !== idx))
 
   const handleNext = async () => {
     setError(null)
@@ -105,7 +78,7 @@ export default function SessionDialog() {
     }
   }
 
-  const handleSubmitClarifications = async () => {
+  const handleSubmit = async () => {
     setError(null)
     setLoading(true)
     try {
@@ -137,21 +110,11 @@ export default function SessionDialog() {
     }
   }
 
-  const grouped = formQuestions.reduce<Record<string, QuestionBlock[]>>(
-    (acc, blk) => {
-      acc[blk.source] = acc[blk.source] || []
-      acc[blk.source].push(blk)
-      return acc
-    },
-    {}
-  )
-
   return (
     <Dialog>
       <DialogTrigger>
         <Plus className='size-4 cursor-pointer' />
       </DialogTrigger>
-
       <DialogContent className='!max-w-none w-[800px] max-h-[80vh] flex flex-col'>
         <DialogHeader>
           <DialogTitle>
@@ -164,109 +127,25 @@ export default function SessionDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className='overflow-y-auto px-4 flex-1 space-y-6'>
-          {step === 0 && (
-            <>
-              {error && <p className='text-sm text-red-600'>{error}</p>}
-              <div>
-                <Label>Session Name</Label>
-                <Input
-                  placeholder='Enter name of session'
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Data Context</Label>
-                <Textarea
-                  placeholder='Tell us more about your data'
-                  className='h-24'
-                  value={dataContext}
-                  onChange={(e) => setDataContext(e.target.value)}
-                />
-              </div>
-              <div>
-                <div className='flex items-center'>
-                  <Label>Upload Files</Label>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={handleAttachClick}
-                    className='ml-2'
-                  >
-                    <Paperclip className='h-4 w-4' />
-                  </Button>
-                  <input
-                    type='file'
-                    multiple
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className='hidden'
-                  />
-                </div>
-                {files.length > 0 && (
-                  <div className='mt-4 space-y-1'>
-                    {files.map((file, idx) => (
-                      <div
-                        key={idx}
-                        className='flex items-center justify-between text-sm'
-                      >
-                        <div className='flex items-center space-x-2'>
-                          {file.type === 'text/csv' && <FileSpreadsheet />}
-                          {file.type.includes('image') && <ImageIcon />}
-                          {file.type === 'text/plain' && <FileType2 />}
-                          <span>{file.name}</span>
-                        </div>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          onClick={() => handleRemoveFile(idx)}
-                        >
-                          <X className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
+        <div className='overflow-y-auto px-4 flex-1'>
+          {step === 0 ? (
+            <SessionSetupStep
+              name={name}
+              setName={setName}
+              dataContext={dataContext}
+              setDataContext={setDataContext}
+              files={files}
+              setFiles={setFiles}
+              loading={loading}
+              error={error}
+            />
+          ) : (
+            <ClarificationStep
+              formQuestions={formQuestions}
+              setFormQuestions={setFormQuestions}
+              error={error}
+            />
           )}
-
-          {step === 1 &&
-            Object.entries(grouped).map(([src, blocks]) => {
-              const filename = src.split('/').pop() || src
-              return (
-                <section key={src} className='space-y-4'>
-                  <p className='font-semibold'>
-                    Source: <FileSpreadsheet className='inline-block mr-1' />
-                    {filename}
-                  </p>
-                  {blocks.map((block) =>
-                    block.questions.map((q, i) => (
-                      <div key={`${block.field}-${i}`}>
-                        <p className='font-medium mb-1'>{q}</p>
-                        <Textarea
-                          value={block.answers[i]}
-                          onChange={(e) => {
-                            const val = e.target.value
-                            setFormQuestions((prev) =>
-                              prev.map((b) => {
-                                if (b === block) {
-                                  const newAns = [...b.answers]
-                                  newAns[i] = val
-                                  return { ...b, answers: newAns }
-                                }
-                                return b
-                              })
-                            )
-                          }}
-                        />
-                      </div>
-                    ))
-                  )}
-                </section>
-              )
-            })}
         </div>
 
         <DialogFooter className='sm:justify-end space-x-2'>
@@ -279,14 +158,15 @@ export default function SessionDialog() {
               Back
             </Button>
           )}
+
           {step === 0 ? (
             <Button onClick={handleNext} disabled={loading}>
-              {loading && <Loader2 className='animate-spin mr-2 h-4 w-4' />}
+              {loading && <Loader2 className='animate-spin h-4 w-4' />}
               Next
             </Button>
           ) : (
-            <Button onClick={handleSubmitClarifications} disabled={loading}>
-              {loading && <Loader2 className='animate-spin mr-2 h-4 w-4' />}
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading && <Loader2 className='animate-spin h-4 w-4' />}
               Submit
             </Button>
           )}

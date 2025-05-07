@@ -1,7 +1,6 @@
 import { createContext, useState, useCallback, ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { ParsedBlock, parseEventStream } from '@/lib/utils'
-import api from '@/lib/api'
 
 export type Message = {
   sender: 'user' | 'bot'
@@ -43,33 +42,62 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       setStreaming(true)
       try {
-        const res = await api.post<string>(
-          `/session/run_task_v2/${sessionId}`,
-          { task, log_iter: 3 },
-          { responseType: 'text' }
+        const token = localStorage.getItem('access_token') ?? ''
+        const res = await fetch(
+          `${
+            import.meta.env.VITE_API_URL
+          }/session/run_task_v2/${sessionId}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ task, log_iter: 3 }),
+          }
         )
-
-        const chunk = res.data
-        const events = parseEventStream(chunk)
-        if (events.length) {
-          events.forEach((parsed) =>
-            setMessages((prev) => [
-              ...prev,
-              {
-                sender: 'bot',
-                parsed,
-                timestamp: new Date().toISOString(),
-              },
-            ])
-          )
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            { sender: 'bot', text: chunk, timestamp: new Date().toISOString() },
-          ])
+        if (!res.ok || !res.body) {
+          console.error('run_task_v2 error:', res.statusText)
+          return
         }
-      } catch (err: any) {
-        console.error('run_task_v2 failed', err)
+
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let done = false
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read()
+          done = readerDone
+          if (value) {
+            const chunk = decoder.decode(value, { stream: true })
+            const events = parseEventStream(chunk)
+
+            if (events.length) {
+              events.forEach((parsed) =>
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    sender: 'bot',
+                    parsed,
+                    timestamp: new Date().toISOString(),
+                  },
+                ])
+              )
+            } else {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  sender: 'bot',
+                  text: chunk,
+                  timestamp: new Date().toISOString(),
+                },
+              ])
+            }
+          }
+        }
+      } catch (err) {
+        console.error('run_task_v2 failed:', err)
       } finally {
         setStreaming(false)
       }

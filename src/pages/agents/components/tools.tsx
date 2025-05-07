@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import Files from './files'
 import GenerateKPIs from './generate-kpis'
+import Checkpoints from './checkpoints'
 
-function Tools() {
+export default function Tools() {
   const baseClasses =
     'inline font-semibold px-10 py-3 border-b-3 cursor-pointer'
-
   const [tab, setTab] = useState(0)
 
   return (
-    <div className='h-[90vh]'>
+    <div className='h-[90vh] flex flex-col'>
       <div className='border-b py-3'>
         <div
           className={`${baseClasses} ${
@@ -27,12 +27,21 @@ function Tools() {
         >
           Goals
         </div>
+        <div
+          className={`${baseClasses} ${
+            tab === 2 && 'border-gray-800 dark:border-white'
+          }`}
+          onClick={() => setTab(2)}
+        >
+          Checkpoints
+        </div>
       </div>
 
-      {tab === 0 && <Files />}
-      {tab === 1 && <GenerateKPIs />}
+      <div className='flex-1 overflow-auto'>
+        {tab === 0 && <Files />}
+        {tab === 1 && <GenerateKPIs />}
+        {tab === 2 && <Checkpoints />}
+      </div>
     </div>
   )
 }
-
-export default Tools

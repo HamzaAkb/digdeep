@@ -4,6 +4,7 @@ import AuthPage from '@/pages/auth'
 import Home from './pages/home'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { Toaster } from '@/components/ui/sonner'
 
 function PrivateRoute() {
   const token = localStorage.getItem('access_token')
@@ -19,6 +20,7 @@ function AppLayout() {
           <SidebarTrigger className='size-4' />
         </div>
         <Outlet />
+        <Toaster />
       </main>
     </SidebarProvider>
   )

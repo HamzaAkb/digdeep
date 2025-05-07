@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -26,11 +27,9 @@ export default function CheckpointDialog({
   const { sessionId } = useParams<{ sessionId: string }>()
   const [label, setLabel] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleCreate = async () => {
     if (!sessionId) return
-    setError(null)
     setLoading(true)
     try {
       await api.post(
@@ -38,14 +37,10 @@ export default function CheckpointDialog({
         {},
         { params: { label } }
       )
+      toast.success('Checkpoint created')
       onOpenChange(false)
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          err.response?.statusText ||
-          err.message ||
-          'Failed to create checkpoint'
-      )
+      toast.error('Checkpoint creation failed')
     } finally {
       setLoading(false)
     }
@@ -67,7 +62,6 @@ export default function CheckpointDialog({
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
-          {error && <p className='text-sm text-red-600 mt-1'>{error}</p>}
         </div>
 
         <DialogFooter className='mt-4 space-x-2'>
@@ -75,7 +69,7 @@ export default function CheckpointDialog({
             <Button variant='secondary'>Cancel</Button>
           </DialogClose>
           <Button onClick={handleCreate} disabled={!label.trim() || loading}>
-            {loading && <Loader2 className='animate-spin h-4 w-4 mr-2' />}
+            {loading && <Loader2 className='animate-spin h-4 w-4' />}
             Create
           </Button>
         </DialogFooter>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Loader2 } from 'lucide-react'
+import api from '@/lib/api'
 
 import {
   Card,
@@ -16,7 +17,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 export default function AuthPage() {
   const navigate = useNavigate()
-  const API_BASE = import.meta.env.VITE_API_URL
 
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin')
   const [loginData, setLoginData] = useState({ username: '', password: '' })
@@ -34,6 +34,7 @@ export default function AuthPage() {
     e.preventDefault()
     setError(null)
     setLoadingLogin(true)
+
     try {
       const params = new URLSearchParams()
       params.append('grant_type', '')
@@ -43,23 +44,23 @@ export default function AuthPage() {
       params.append('client_id', '')
       params.append('client_secret', '')
 
-      const res = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
+      const response = await api.post('/login', params.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
         },
-        body: params.toString(),
       })
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || res.statusText)
-
+      const data = response.data
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user_details', JSON.stringify(data.user_details))
       navigate('/')
     } catch (err: any) {
-      setError(err.message || 'Login failed')
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.error_description ||
+          err.message ||
+          'Login failed'
+      )
     } finally {
       setLoadingLogin(false)
     }
@@ -70,26 +71,20 @@ export default function AuthPage() {
     setError(null)
     setLoadingSignup(true)
     try {
-      const res = await fetch(`${API_BASE}/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          name: signupData.name,
-          username: signupData.username,
-          email: signupData.email,
-          password: signupData.password,
-        }),
+      await api.post('/signup', {
+        name: signupData.name,
+        username: signupData.username,
+        email: signupData.email,
+        password: signupData.password,
       })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || res.statusText)
-
       setActiveTab('signin')
     } catch (err: any) {
-      setError(err.message || 'Signup failed')
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          'Signup failed'
+      )
     } finally {
       setLoadingSignup(false)
     }

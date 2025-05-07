@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import { SendHorizontal } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { ChatContext } from '@/contexts/chat-context'
+import api from '@/lib/api'
 
 type KPI = {
   title: string
@@ -17,31 +18,15 @@ export default function GenerateKPIs() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const TOKEN = import.meta.env.VITE_TOKEN
-  const API_URL = import.meta.env.VITE_API_URL
-
   const generate = useCallback(async () => {
     if (!sessionId || !goal.trim()) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(
-        `${API_URL}/session/generate_tasks/${sessionId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${TOKEN}`,
-          },
-          body: JSON.stringify({ task_goals: goal }),
-        }
-      )
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.detail || res.statusText)
-      }
-      const data = await res.json()
-      const complex = data.tasks?.complex_kpis ?? []
+      const res = await api.post(`/session/generate_tasks/${sessionId}`, {
+        task_goals: goal,
+      })
+      const complex = res.data.tasks?.complex_kpis ?? []
       setKpis(
         complex.map((item: any) => ({
           title: item.kpi_name,
@@ -49,11 +34,16 @@ export default function GenerateKPIs() {
         }))
       )
     } catch (err: any) {
-      setError(err.message)
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to generate KPIs'
+      )
     } finally {
       setLoading(false)
     }
-  }, [API_URL, TOKEN, sessionId, goal])
+  }, [sessionId, goal])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

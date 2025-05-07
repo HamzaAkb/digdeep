@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Loader2 } from 'lucide-react'
+import api from '@/lib/api'
 import {
   Dialog,
   DialogTrigger,
@@ -13,9 +14,6 @@ import {
 import { Button } from '@/components/ui/button'
 import SessionSetupStep from './session-setup'
 import ClarificationStep, { QuestionBlock } from './clarification'
-
-const API_BASE = import.meta.env.VITE_API_URL
-const TOKEN = import.meta.env.VITE_TOKEN
 
 export default function SessionDialog() {
   const [step, setStep] = useState(0)
@@ -31,43 +29,25 @@ export default function SessionDialog() {
     setError(null)
     setLoading(true)
     try {
-      const startRes = await fetch(`${API_BASE}/session/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          name,
-          data_context: dataContext,
-        }),
+      await api.post('/session/start', {
+        session_id: sessionId,
+        name,
+        data_context: dataContext,
       })
-      if (!startRes.ok) {
-        const err = await startRes.json()
-        throw new Error(err.detail || startRes.statusText)
-      }
 
       if (files.length > 0) {
         const formData = new FormData()
         files.forEach((f) => formData.append('files', f))
         formData.append('data_sources', JSON.stringify({ sources: [] }))
 
-        const uploadRes = await fetch(
-          `${API_BASE}/session/files/${sessionId}`,
-          {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${TOKEN}` },
-            body: formData,
-          }
+        const uploadRes = await api.post(
+          `/session/files/${sessionId}`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
         )
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json()
-          throw new Error(err.detail || uploadRes.statusText)
-        }
 
-        const uploadJson = await uploadRes.json()
-        const questions = (uploadJson.form.questions ?? []) as QuestionBlock[]
+        const questions = (uploadRes.data.form.questions ??
+          []) as QuestionBlock[]
 
         if (questions.length === 0) {
           window.location.href = `/session/${sessionId}`
@@ -78,10 +58,9 @@ export default function SessionDialog() {
         setStep(1)
       } else {
         window.location.href = `/session/${sessionId}`
-        return
       }
     } catch (err: any) {
-      setError(err.message)
+      setError(err.response?.data?.detail || err.message)
     } finally {
       setLoading(false)
     }
@@ -98,22 +77,13 @@ export default function SessionDialog() {
         })
       )
 
-      const res = await fetch(`${API_BASE}/session/clarify/${sessionId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({ clarifications: clarMap }),
+      await api.post(`/session/clarify/${sessionId}`, {
+        clarifications: clarMap,
       })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.detail || res.statusText)
-      }
 
       window.location.href = `/session/${sessionId}`
     } catch (err: any) {
-      setError(err.message)
+      setError(err.response?.data?.detail || err.message)
     } finally {
       setLoading(false)
     }

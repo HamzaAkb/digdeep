@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useMatch } from 'react-router'
 import { MessageSquare } from 'lucide-react'
+import api from '@/lib/api'
 import {
   Sidebar,
   SidebarContent,
@@ -28,9 +29,6 @@ export function AppSidebar() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const API_BASE = import.meta.env.VITE_API_URL
-  const TOKEN = import.meta.env.VITE_TOKEN
-
   const match = useMatch('/session/:sessionId')
   const activeSessionId = match?.params.sessionId
 
@@ -41,25 +39,22 @@ export function AppSidebar() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(
-          `${API_BASE}/session/user/sessions?page=1&items_per_page=10`,
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${TOKEN}`,
-            },
-          }
+        const res = await api.get<{ data: SessionItem[] }>(
+          '/session/user/sessions',
+          { params: { page: 1, items_per_page: 10 } }
         )
-        if (!res.ok) {
-          const err = await res.json()
-          throw new Error(err.detail || res.statusText)
-        }
-        const json = await res.json()
         if (!cancelled) {
-          setSessions(json.data)
+          setSessions(res.data.data)
         }
       } catch (err: any) {
-        if (!cancelled) setError(err.message)
+        if (!cancelled) {
+          setError(
+            err.response?.data?.detail ||
+              err.response?.data?.message ||
+              err.message ||
+              'Failed to load sessions'
+          )
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -69,7 +64,7 @@ export function AppSidebar() {
     return () => {
       cancelled = true
     }
-  }, [API_BASE, TOKEN])
+  }, [])
 
   return (
     <Sidebar>

@@ -2,14 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import ReactMarkdown from 'react-markdown'
 import { Download } from 'lucide-react'
+import api from '@/lib/api'
 
 interface FileMeta {
   name: string
   size: number
   modified: number
 }
-
-const ACCESS_TOKEN = import.meta.env.VITE_TOKEN
 
 export default function Files() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -19,28 +18,20 @@ export default function Files() {
   const [textContent, setTextContent] = useState<string>('')
   const [imgUrl, setImgUrl] = useState<string>('')
   const [csvData, setCsvData] = useState<string[][]>([])
-  const sinceRef = useRef<number>(1746361047)
+  const sinceRef = useRef<number>(0)
 
-  const BASE_URL = `${
-    import.meta.env.VITE_API_URL
-  }/session/${sessionId}/outputs`
-
-  // Poll for new files
   useEffect(() => {
     let cancelled = false
+
     const poll = async () => {
-      const url = `${BASE_URL}?since=${sinceRef.current}`
       try {
-        const res = await fetch(url, {
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${ACCESS_TOKEN}`,
-          },
-        })
-        if (!res.ok) throw new Error(res.statusText)
-        const json = await res.json()
-        const newFiles: FileMeta[] = Array.isArray(json.files) ? json.files : []
+        const res = await api.get<{ files: FileMeta[] }>(
+          `/session/${sessionId}/outputs`,
+          { params: { since: sinceRef.current } }
+        )
+        const newFiles = res.data.files
         if (cancelled || newFiles.length === 0) return
+
         setFiles((prev) => [...prev, ...newFiles])
         const maxTs = Math.max(
           ...newFiles.map((f) => f.modified || sinceRef.current)
@@ -50,50 +41,47 @@ export default function Files() {
         console.error('Polling error:', err)
       }
     }
+
     poll()
-    const id = setInterval(poll, 10000)
+    const id = setInterval(poll, 10_000)
     return () => {
       cancelled = true
       clearInterval(id)
     }
-  }, [])
+  }, [sessionId])
 
-  // Fetch selected file contents
   useEffect(() => {
     if (!selected) return
     setTextContent('')
     setImgUrl('')
     setCsvData([])
 
-    const fetchFile = async () => {
-      const url = `${BASE_URL}/${encodeURIComponent(selected.name)}`
-      try {
-        const res = await fetch(url, {
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${ACCESS_TOKEN}`,
-          },
-        })
-        if (!res.ok) throw new Error(res.statusText)
+    let objectUrl: string | null = null
 
-        // CSV
+    const fetchFile = async () => {
+      try {
+        const path = `/session/${sessionId}/outputs/${encodeURIComponent(
+          selected.name
+        )}`
+
         if (selected.name.toLowerCase().endsWith('.csv')) {
-          const txt = await res.text()
-          const rows = txt
+          const res = await api.get<string>(path, { responseType: 'text' })
+          const rows = res.data
             .trim()
             .split('\n')
             .map((line) => line.split(','))
           setCsvData(rows)
         }
-        // Image
+
         else if (/\.(png|jpe?g|gif)$/i.test(selected.name)) {
-          const blob = await res.blob()
-          setImgUrl(URL.createObjectURL(blob))
+          const res = await api.get<Blob>(path, { responseType: 'blob' })
+          objectUrl = URL.createObjectURL(res.data)
+          setImgUrl(objectUrl)
         }
-        // Fallback to markdown/text
+
         else {
-          const txt = await res.text()
-          setTextContent(txt)
+          const res = await api.get<string>(path, { responseType: 'text' })
+          setTextContent(res.data)
         }
       } catch (err) {
         console.error('Fetch file error:', err)
@@ -102,24 +90,18 @@ export default function Files() {
 
     fetchFile()
     return () => {
-      if (imgUrl) URL.revokeObjectURL(imgUrl)
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [selected])
+  }, [selected, sessionId])
 
-  // Download handler
   const downloadFile = async () => {
     if (!selected) return
-    const url = `${BASE_URL}/${encodeURIComponent(selected.name)}`
     try {
-      const res = await fetch(url, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-        },
-      })
-      if (!res.ok) throw new Error(res.statusText)
-      const blob = await res.blob()
-      const downloadUrl = URL.createObjectURL(blob)
+      const res = await api.get<Blob>(
+        `/session/${sessionId}/outputs/${encodeURIComponent(selected.name)}`,
+        { responseType: 'blob' }
+      )
+      const downloadUrl = URL.createObjectURL(res.data)
       const a = document.createElement('a')
       a.href = downloadUrl
       a.download = selected.name
@@ -134,7 +116,6 @@ export default function Files() {
 
   return (
     <div className='h-full flex'>
-      {/* Sidebar */}
       <aside className='w-[180px] border-r p-4 overflow-y-auto'>
         <ul className='space-y-1 text-sm'>
           {files.map((f, i) => (
@@ -151,7 +132,6 @@ export default function Files() {
         </ul>
       </aside>
 
-      {/* Content Display */}
       <main className='flex-1 p-4 overflow-y-auto'>
         {!selected ? (
           <p className='text-gray-500'>Select a file to view its contents.</p>
@@ -166,7 +146,6 @@ export default function Files() {
               />
             </div>
 
-            {/* CSV Table */}
             {csvData.length > 0 ? (
               <div className='overflow-auto'>
                 <table className='min-w-full border-collapse text-sm'>

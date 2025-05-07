@@ -25,7 +25,7 @@ function Tools() {
           }`}
           onClick={() => setTab(1)}
         >
-          KPI Generator
+          Goals
         </div>
       </div>
 

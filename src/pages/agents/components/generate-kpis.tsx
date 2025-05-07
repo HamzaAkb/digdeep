@@ -1,7 +1,7 @@
 import { useState, useCallback, useContext } from 'react'
 import { useParams } from 'react-router'
 import { SendHorizontal } from 'lucide-react'
-import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { ChatContext } from '@/contexts/chat-context'
 import api from '@/lib/api'
 
@@ -56,16 +56,15 @@ export default function GenerateKPIs() {
     <div className='h-full p-4'>
       <div className='flex justify-center my-12'>
         <div className='relative w-[500px]'>
-          <Textarea
+          <Input
             placeholder='Enter your analysis goal'
-            className='h-24'
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             onKeyDown={onKeyDown}
             disabled={loading}
           />
           <SendHorizontal
-            className='size-4 absolute bottom-3 right-3 cursor-pointer'
+            className='size-4 absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer'
             onClick={generate}
           />
         </div>
@@ -73,29 +72,33 @@ export default function GenerateKPIs() {
 
       {error && <p className='text-sm text-red-600 mb-4'>{error}</p>}
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {loading
-          ? Array.from({ length: 6 }).map((_, idx) => (
-              <div
-                key={idx}
-                className='border rounded-lg p-4 animate-pulse space-y-4'
-              >
-                <div className='h-4 bg-gray-200 rounded w-3/4' />
-                <div className='h-3 bg-gray-200 rounded w-full' />
-                <div className='h-3 bg-gray-200 rounded w-5/6' />
-              </div>
-            ))
-          : kpis.map((kpi, idx) => (
-              <div
-                key={idx}
-                className='border rounded-lg p-4 hover:shadow-md transition cursor-pointer'
-                onClick={() => sendTask(kpi.description)}
-              >
-                <div className='font-semibold mb-2'>{kpi.title}</div>
-                <div className='text-sm text-gray-600'>{kpi.description}</div>
-              </div>
-            ))}
-      </div>
+      {loading ? (
+        <div className='space-y-6'>
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={idx}
+              className='border rounded-lg p-4 animate-pulse space-y-4'
+            >
+              <div className='h-4 bg-gray-200 rounded w-3/4' />
+              <div className='h-3 bg-gray-200 rounded w-full' />
+              <div className='h-3 bg-gray-200 rounded w-5/6' />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className='space-y-6'>
+          {kpis.map((kpi, idx) => (
+            <div
+              key={idx}
+              className='border rounded-lg p-4 hover:shadow-md transition cursor-pointer'
+              onClick={() => sendTask(kpi.description)}
+            >
+              <div className='font-semibold mb-2'>{kpi.title}</div>
+              <div className='text-sm text-gray-600'>{kpi.description}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

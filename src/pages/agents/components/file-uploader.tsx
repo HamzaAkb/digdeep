@@ -7,6 +7,7 @@ import {
   FileType2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 
 interface Props {
   files: File[]
@@ -26,7 +27,7 @@ export default function FileUploader({ files, setFiles }: Props) {
   return (
     <div>
       <div className='flex items-center'>
-        <label className='mr-2 font-medium'>Upload Files</label>
+        <Label>Upload Files</Label>
         <Button
           variant='ghost'
           size='icon'

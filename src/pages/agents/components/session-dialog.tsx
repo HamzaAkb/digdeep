@@ -12,7 +12,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import SessionSetupStep from './session-setup'
+import SessionSetupStep, { DataSourceItem } from './session-setup'
 import ClarificationStep, { QuestionBlock } from './clarification'
 
 export default function SessionDialog() {
@@ -21,6 +21,7 @@ export default function SessionDialog() {
   const [name, setName] = useState('')
   const [dataContext, setDataContext] = useState('')
   const [files, setFiles] = useState<File[]>([])
+  const [dataSources, setDataSources] = useState<DataSourceItem[]>([])
   const [formQuestions, setFormQuestions] = useState<QuestionBlock[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,10 +36,18 @@ export default function SessionDialog() {
         data_context: dataContext,
       })
 
-      if (files.length > 0) {
+      if (files.length > 0 || dataSources.length > 0) {
         const formData = new FormData()
         files.forEach((f) => formData.append('files', f))
-        formData.append('data_sources', JSON.stringify({ sources: [] }))
+
+        const payload = {
+          sources: dataSources.map((ds) =>
+            ds.type === 'url'
+              ? { type: 'url', link: ds.value }
+              : { type: 'db', connection_string: ds.value, queries: [] }
+          ),
+        }
+        formData.append('data_sources', JSON.stringify(payload))
 
         const uploadRes = await api.post(
           `/session/files/${sessionId}`,
@@ -48,12 +57,10 @@ export default function SessionDialog() {
 
         const questions = (uploadRes.data.form.questions ??
           []) as QuestionBlock[]
-
-        if (questions.length === 0) {
+        if (!questions.length) {
           window.location.href = `/session/${sessionId}`
           return
         }
-
         setFormQuestions(questions)
         setStep(1)
       } else {
@@ -71,16 +78,14 @@ export default function SessionDialog() {
     setLoading(true)
     try {
       const clarMap: Record<string, string> = {}
-      formQuestions.forEach((block) =>
-        block.questions.forEach((q, i) => {
-          clarMap[q] = block.answers[i] || ''
+      formQuestions.forEach((blk) =>
+        blk.questions.forEach((q, i) => {
+          clarMap[q] = blk.answers[i] || ''
         })
       )
-
       await api.post(`/session/clarify/${sessionId}`, {
         clarifications: clarMap,
       })
-
       window.location.href = `/session/${sessionId}`
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message)
@@ -102,7 +107,7 @@ export default function SessionDialog() {
           </DialogTitle>
           <DialogDescription>
             {step === 0
-              ? 'Provide a brief description and upload your data files.'
+              ? 'Provide a brief description, upload your data files, and add any data sources.'
               : 'Answer a few questions so we can better understand your data.'}
           </DialogDescription>
         </DialogHeader>
@@ -116,6 +121,8 @@ export default function SessionDialog() {
               setDataContext={setDataContext}
               files={files}
               setFiles={setFiles}
+              dataSources={dataSources}
+              setDataSources={setDataSources}
               loading={loading}
               error={error}
             />

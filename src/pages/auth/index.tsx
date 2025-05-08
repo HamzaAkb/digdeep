@@ -94,7 +94,7 @@ export default function AuthPage() {
     <div className='flex min-h-screen items-center justify-center bg-background p-4'>
       <Card className='w-full max-w-sm'>
         <CardHeader className='space-y-1'>
-          <CardTitle className='text-2xl text-center'>Agentlytics</CardTitle>
+          <CardTitle className='text-2xl text-center'>DigDeep</CardTitle>
           <CardDescription className='text-center'>
             {activeTab === 'signin'
               ? 'Sign in to your account'

@@ -3,6 +3,12 @@ import { useParams } from 'react-router'
 import ReactMarkdown from 'react-markdown'
 import { Download } from 'lucide-react'
 import api from '@/lib/api'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface FileMeta {
   name: string
@@ -71,15 +77,11 @@ export default function Files() {
             .split('\n')
             .map((line) => line.split(','))
           setCsvData(rows)
-        }
-
-        else if (/\.(png|jpe?g|gif)$/i.test(selected.name)) {
+        } else if (/(png|jpe?g|gif)$/i.test(selected.name)) {
           const res = await api.get<Blob>(path, { responseType: 'blob' })
           objectUrl = URL.createObjectURL(res.data)
           setImgUrl(objectUrl)
-        }
-
-        else {
+        } else {
           const res = await api.get<string>(path, { responseType: 'text' })
           setTextContent(res.data)
         }
@@ -117,19 +119,29 @@ export default function Files() {
   return (
     <div className='h-full flex'>
       <aside className='w-[180px] border-r p-4 overflow-y-auto'>
-        <ul className='space-y-1 text-sm'>
-          {files.map((f, i) => (
-            <li
-              key={`${f.name}-${i}`}
-              className={`truncate cursor-pointer px-2 py-1 rounded ${
-                selected?.name === f.name ? 'bg-blue-100 dark:bg-blue-500' : ''
-              }`}
-              onClick={() => setSelected(f)}
-            >
-              📄 {f.name}
-            </li>
-          ))}
-        </ul>
+        <TooltipProvider>
+          <ul className='space-y-1 text-sm'>
+            {files.map((f, i) => (
+              <Tooltip key={`${f.name}-${i}`}>
+                <TooltipTrigger asChild>
+                  <li
+                    className={`truncate cursor-pointer px-2 py-1 rounded ${
+                      selected?.name === f.name
+                        ? 'bg-blue-100 dark:bg-blue-500'
+                        : ''
+                    }`}
+                    onClick={() => setSelected(f)}
+                  >
+                    📄 {f.name}
+                  </li>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{f.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </ul>
+        </TooltipProvider>
       </aside>
 
       <main className='flex-1 p-4 overflow-y-auto'>

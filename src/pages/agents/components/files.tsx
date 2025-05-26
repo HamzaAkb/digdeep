@@ -9,6 +9,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  FileListSkeleton,
+  ContentSkeleton,
+  TableSkeleton,
+} from '@/components/skeletons'
 import remarkGfm from 'remark-gfm'
 
 interface FileMeta {
@@ -25,6 +30,8 @@ export default function Files() {
   const [textContent, setTextContent] = useState<string>('')
   const [imgUrl, setImgUrl] = useState<string>('')
   const [csvData, setCsvData] = useState<string[][]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isContentLoading, setIsContentLoading] = useState(false)
   const sinceRef = useRef<number>(0)
 
   useEffect(() => {
@@ -61,8 +68,10 @@ export default function Files() {
           ...newFiles.map((f) => f.modified || sinceRef.current)
         )
         sinceRef.current = maxTs
+        setIsLoading(false)
       } catch (err) {
         console.error('Polling error:', err)
+        setIsLoading(false)
       }
     }
 
@@ -79,6 +88,7 @@ export default function Files() {
     setTextContent('')
     setImgUrl('')
     setCsvData([])
+    setIsContentLoading(true)
 
     let objectUrl: string | null = null
 
@@ -105,6 +115,8 @@ export default function Files() {
         }
       } catch (err) {
         console.error('Fetch file error:', err)
+      } finally {
+        setIsContentLoading(false)
       }
     }
 
@@ -138,27 +150,31 @@ export default function Files() {
     <div className='h-full flex'>
       <aside className='w-[180px] border-r p-4 overflow-y-auto'>
         <TooltipProvider>
-          <ul className='space-y-1 text-sm'>
-            {files.map((f, i) => (
-              <Tooltip key={`${f.name}-${i}`}>
-                <TooltipTrigger asChild>
-                  <li
-                    className={`truncate cursor-pointer px-2 py-1 rounded ${
-                      selected?.name === f.name
-                        ? 'bg-blue-100 dark:bg-blue-500'
-                        : ''
-                    }`}
-                    onClick={() => setSelected(f)}
-                  >
-                    📄 {f.name}
-                  </li>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{f.name}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </ul>
+          {isLoading ? (
+            <FileListSkeleton />
+          ) : (
+            <ul className='space-y-1 text-sm'>
+              {files.map((f, i) => (
+                <Tooltip key={`${f.name}-${i}`}>
+                  <TooltipTrigger asChild>
+                    <li
+                      className={`truncate cursor-pointer px-2 py-1 rounded ${
+                        selected?.name === f.name
+                          ? 'bg-blue-100 dark:bg-blue-500'
+                          : ''
+                      }`}
+                      onClick={() => setSelected(f)}
+                    >
+                      📄 {f.name}
+                    </li>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{f.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </ul>
+          )}
         </TooltipProvider>
       </aside>
 
@@ -176,7 +192,13 @@ export default function Files() {
               />
             </div>
 
-            {csvData.length > 0 ? (
+            {isContentLoading ? (
+              selected.name.toLowerCase().endsWith('.csv') ? (
+                <TableSkeleton />
+              ) : (
+                <ContentSkeleton />
+              )
+            ) : csvData.length > 0 ? (
               <div className='overflow-auto'>
                 <table className='min-w-full border-collapse text-sm'>
                   <thead>
@@ -223,7 +245,7 @@ export default function Files() {
                     td: ({node, ...props}) => <td className="border px-4 py-2" {...props} />,
                   }}
                 >
-                  {textContent || 'Loading…'}
+                  {textContent || 'No content available'}
                 </ReactMarkdown>
               </div>
             )}

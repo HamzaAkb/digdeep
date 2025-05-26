@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import api from '@/lib/api'
 
 import {
@@ -77,14 +78,15 @@ export default function AuthPage() {
         email: signupData.email,
         password: signupData.password,
       })
+      toast.success('Confirmation email sent! Please check your inbox.')
       setActiveTab('signin')
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          'Signup failed'
-      )
+      const errorMessage = err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        'Sign up failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoadingSignup(false)
     }

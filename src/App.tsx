@@ -21,7 +21,6 @@ function AppLayout() {
           <SidebarTrigger className='size-4' />
         </div>
         <Outlet />
-        <Toaster />
       </main>
     </SidebarProvider>
   )
@@ -29,18 +28,22 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path='/auth' element={<AuthPage />} />
-      <Route path='/confirm-email' element={<ConfirmEmail />} />
+    <>
+      <Routes>
+        <Route path='/auth' element={<AuthPage />} />
+        <Route path='/confirm-email' element={<ConfirmEmail />} />
 
-      <Route element={<PrivateRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path='/' element={<Home />} />
-          <Route path='/session/:sessionId' element={<Agents />} />
+        <Route element={<PrivateRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path='/' element={<Home />} />
+            <Route path='/session/:sessionId' element={<Agents />} />
+          </Route>
         </Route>
-      </Route>
 
-      <Route path='*' element={<Navigate to='/' replace />} />
-    </Routes>
+        <Route path='*' element={<Navigate to='/' replace />} />
+      </Routes>
+      
+      <Toaster />
+    </>
   )
 }

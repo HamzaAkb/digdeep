@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router'
 import Agents from '@/pages/agents'
 import AuthPage from '@/pages/auth'
 import Home from './pages/home'
+import ConfirmEmail from '@/pages/auth/confirm-email'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <Routes>
       <Route path='/auth' element={<AuthPage />} />
+      <Route path='/confirm-email' element={<ConfirmEmail />} />
 
       <Route element={<PrivateRoute />}>
         <Route element={<AppLayout />}>

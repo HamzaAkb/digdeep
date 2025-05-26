@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useMatch } from 'react-router'
 import { MessageSquare } from 'lucide-react'
+import { toast } from 'sonner'
 import api from '@/lib/api'
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import { Separator } from '@/components/ui/separator'
 import { ModeToggle } from './mode-toggle'
 import { LogoutButton } from './logout-button'
 import SessionDialog from '@/pages/agents/components/session-dialog'
+import { SessionItemDropdown } from './session-item-dropdown'
 
 type SessionItem = {
   session_id: string
@@ -32,6 +34,21 @@ export function AppSidebar() {
 
   const match = useMatch('/session/:sessionId')
   const activeSessionId = match?.params.sessionId
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await api.delete(`/session/${sessionId}`)
+      setSessions((prev) => prev.filter((s) => s.session_id !== sessionId))
+      toast.success('Session deleted successfully')
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to delete session'
+      )
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -123,6 +140,10 @@ export function AppSidebar() {
                           <span>{title}</span>
                         </Link>
                       </SidebarMenuButton>
+                      <SessionItemDropdown
+                        sessionId={sess.session_id}
+                        onDelete={handleDeleteSession}
+                      />
                     </SidebarMenuItem>
                   )
                 })}

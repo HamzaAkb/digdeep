@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { ModeToggle } from './mode-toggle'
+import { LogoutButton } from './logout-button'
 import SessionDialog from '@/pages/agents/components/session-dialog'
 
 type SessionItem = {
@@ -138,7 +139,14 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <ModeToggle />
+        <div className="flex w-full gap-2 px-2">
+          <div className="w-1/2">
+            <ModeToggle />
+          </div>
+          <div className="w-1/2">
+            <LogoutButton />
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

@@ -7,8 +7,11 @@ import {
 import Chatbot from './components/chatbot'
 import Tools from './components/tools'
 import ClarificationDialog from './components/clarification-dialog'
+import { useParams } from 'react-router'
 
 export default function Agents() {
+  const { sessionId } = useParams<{ sessionId: string }>()
+
   return (
     <>
       <ClarificationDialog />
@@ -26,7 +29,7 @@ export default function Agents() {
             />
 
             <ResizablePanel className='border rounded-lg hidden md:block'>
-              <Tools />
+              <Tools key={sessionId} />
             </ResizablePanel>
           </ResizablePanelGroup>
         </ChatProvider>

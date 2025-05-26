@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { ParsedBlock, parseEventStream } from '@/lib/utils'
 
@@ -31,6 +31,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     },
   ])
   const [streaming, setStreaming] = useState(false)
+
+  useEffect(() => {
+    setMessages([
+      {
+        sender: 'user',
+        text: '👋 How can I help you today?',
+        timestamp: new Date().toISOString(),
+      },
+    ])
+    setStreaming(false)
+  }, [sessionId])
 
   const sendTask = useCallback(
     async (task: string) => {

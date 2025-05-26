@@ -1,12 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router'
 import Files from './files'
 import GenerateKPIs from './generate-kpis'
 import Checkpoints from './checkpoints'
 
 export default function Tools() {
+  const { sessionId } = useParams<{ sessionId: string }>()
   const baseClasses =
     'inline font-semibold px-10 py-3 border-b-3 cursor-pointer'
   const [tab, setTab] = useState(0)
+  
+  useEffect(() => {
+    setTab(0)
+  }, [sessionId])
 
   return (
     <div className='h-[90vh] flex flex-col'>

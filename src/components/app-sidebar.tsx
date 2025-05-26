@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useMatch } from 'react-router'
-import { MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 import {
@@ -31,6 +30,10 @@ export function AppSidebar() {
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const observer = useRef<IntersectionObserver | null>(null)
+  const ITEMS_PER_PAGE = 25
 
   const match = useMatch('/session/:sessionId')
   const activeSessionId = match?.params.sessionId
@@ -50,39 +53,47 @@ export function AppSidebar() {
     }
   }
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadSessions() {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await api.get<{ data: SessionItem[] }>(
-          '/session/user/sessions',
-          { params: { page: 1, items_per_page: 10 } }
-        )
-        if (!cancelled) {
-          setSessions(res.data.data)
-        }
-      } catch (err: any) {
-        if (!cancelled) {
-          setError(
-            err.response?.data?.detail ||
-              err.response?.data?.message ||
-              err.message ||
-              'Failed to load sessions'
-          )
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+  const lastSessionElementRef = useCallback((node: HTMLLIElement | null) => {
+    if (loading) return
+    if (observer.current) observer.current.disconnect()
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1)
       }
-    }
+    })
+    if (node) observer.current.observe(node)
+  }, [loading, hasMore])
 
-    loadSessions()
-    return () => {
-      cancelled = true
+  const loadSessions = useCallback(async (pageNum: number) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await api.get<{ data: SessionItem[], total: number }>(
+        '/session/user/sessions',
+        { params: { page: pageNum, items_per_page: ITEMS_PER_PAGE } }
+      )
+
+      setSessions(prev => {
+        if (pageNum === 1) return res.data.data
+        return [...prev, ...res.data.data]
+      })
+      
+      setHasMore(res.data.data.length === ITEMS_PER_PAGE)
+    } catch (err: any) {
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to load sessions'
+      )
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    loadSessions(page)
+  }, [page, loadSessions])
 
   return (
     <Sidebar>
@@ -105,51 +116,53 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {loading && (
-                <SidebarMenuItem>
-                  <div className='px-2 py-1 text-sm text-gray-500'>
-                    Loading…
-                  </div>
-                </SidebarMenuItem>
-              )}
               {error && (
                 <SidebarMenuItem>
                   <div className='px-2 py-1 text-sm text-red-600'>{error}</div>
                 </SidebarMenuItem>
               )}
-              {!loading &&
-                !error &&
-                sessions.map((sess) => {
-                  const title = sess.name?.trim() || 'Untitled Session'
-                  const isActive = sess.session_id === activeSessionId
-                  return (
-                    <SidebarMenuItem
-                      key={sess.session_id}
-                      className={
-                        isActive
-                          ? 'bg-gray-100 dark:bg-gray-800 font-semibold'
-                          : ''
-                      }
-                    >
-                      <SidebarMenuButton asChild>
-                        <Link
-                          to={`/session/${sess.session_id}`}
-                          className='flex items-center space-x-2 px-2 py-1'
-                        >
-                          <MessageSquare className='h-4 w-4' />
-                          <span>{title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                      <SessionItemDropdown
-                        sessionId={sess.session_id}
-                        onDelete={handleDeleteSession}
-                      />
-                    </SidebarMenuItem>
-                  )
-                })}
+              {sessions.map((sess, index) => {
+                const title = sess.name?.trim() || 'Untitled Session'
+                const isActive = sess.session_id === activeSessionId
+                const isLastElement = index === sessions.length - 1
+                
+                return (
+                  <SidebarMenuItem
+                    key={sess.session_id}
+                    ref={isLastElement ? lastSessionElementRef : null}
+                    className={`group transition-colors duration-200 ${
+                      isActive
+                        ? 'bg-gray-100 dark:bg-gray-800'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <SidebarMenuButton asChild>
+                      <Link
+                        to={`/session/${sess.session_id}`}
+                        className='flex items-center justify-between w-full px-3 py-2'
+                      >
+                        <span className={`truncate ${isActive ? 'font-medium' : ''}`}>
+                          {title}
+                        </span>
+                        <SessionItemDropdown
+                          sessionId={sess.session_id}
+                          onDelete={handleDeleteSession}
+                        />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+              {loading && (
+                <SidebarMenuItem>
+                  <div className='px-3 py-2 text-sm text-gray-500'>
+                    Loading more sessions...
+                  </div>
+                </SidebarMenuItem>
+              )}
               {!loading && !error && sessions.length === 0 && (
                 <SidebarMenuItem>
-                  <div className='px-2 py-1 text-sm text-gray-500'>
+                  <div className='px-3 py-2 text-sm text-gray-500'>
                     No sessions found.
                   </div>
                 </SidebarMenuItem>

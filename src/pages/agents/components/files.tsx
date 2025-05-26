@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import remarkGfm from 'remark-gfm'
 
 interface FileMeta {
   name: string
@@ -206,8 +207,24 @@ export default function Files() {
             ) : imgUrl ? (
               <img src={imgUrl} alt={selected.name} className='max-w-full' />
             ) : (
-              <div className='prose max-w-none'>
-                <ReactMarkdown>{textContent || 'Loading…'}</ReactMarkdown>
+              <div className='prose dark:prose-invert max-w-none'>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-4" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4" {...props} />,
+                    li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                    table: ({node, ...props}) => <table className="min-w-full border-collapse mb-4" {...props} />,
+                    th: ({node, ...props}) => <th className="border px-4 py-2 text-left" {...props} />,
+                    td: ({node, ...props}) => <td className="border px-4 py-2" {...props} />,
+                  }}
+                >
+                  {textContent || 'Loading…'}
+                </ReactMarkdown>
               </div>
             )}
           </>

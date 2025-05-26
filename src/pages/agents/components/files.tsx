@@ -38,7 +38,24 @@ export default function Files() {
         const newFiles = res.data.files
         if (cancelled || newFiles.length === 0) return
 
-        setFiles((prev) => [...prev, ...newFiles])
+        setFiles((prev) => {
+          const fileMap = new Map(prev.map(f => [f.name, f]))
+          
+          newFiles.forEach(file => {
+            fileMap.set(file.name, file)
+          })
+          
+          const sortedFiles = Array.from(fileMap.values())
+            .sort((a, b) => (b.modified || 0) - (a.modified || 0))
+          
+          if (newFiles.length > 0) {
+            const mostRecentFile = sortedFiles[0]
+            setSelected(mostRecentFile)
+          }
+          
+          return sortedFiles
+        })
+
         const maxTs = Math.max(
           ...newFiles.map((f) => f.modified || sinceRef.current)
         )

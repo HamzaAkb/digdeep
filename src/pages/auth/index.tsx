@@ -79,6 +79,7 @@ export default function AuthPage() {
         password: signupData.password,
       })
       toast.success('Confirmation email sent! Please check your inbox.')
+      setSignupData({ name: '', username: '', email: '', password: '' })
       setActiveTab('signin')
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||

@@ -71,6 +71,15 @@ export default function Chatbot() {
               className='h-24'
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  const t = input.trim()
+                  if (!t) return
+                  setInput('')
+                  sendTask(t)
+                }
+              }}
             />
             <FileText
               className='size-4 absolute bottom-3 right-10 cursor-pointer'

@@ -46,6 +46,20 @@ export function SessionList() {
     }
   }
 
+  const handleShareSession = async (sessionId: string, email: string) => {
+    try {
+      await api.post(`/session/${sessionId}/share`, { email })
+      toast.success('Session shared successfully')
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to share session'
+      )
+    }
+  }
+
   const lastSessionElementRef = useCallback((node: HTMLLIElement | null) => {
     if (loading) return
     if (observer.current) observer.current.disconnect()
@@ -130,6 +144,7 @@ export function SessionList() {
                     <SessionItemDropdown
                       sessionId={sess.session_id}
                       onDelete={handleDeleteSession}
+                      onShare={handleShareSession}
                     />
                   </Link>
                 </SidebarMenuButton>

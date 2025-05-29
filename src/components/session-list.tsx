@@ -137,6 +137,11 @@ export function SessionList() {
                   <Link
                     to={`/session/${sess.session_id}`}
                     className='flex items-center justify-between w-full px-3 py-2'
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('.dropdown-trigger')) {
+                        e.preventDefault()
+                      }
+                    }}
                   >
                     <span className={`truncate ${isActive ? 'font-medium' : ''}`}>
                       {title}

@@ -20,29 +20,38 @@ interface SessionShareDialogProps {
   onShare: (sessionId: string, email: string) => void
 }
 
-export function SessionShareDialog({ open, onOpenChange, sessionId, onShare }: SessionShareDialogProps) {
+export function SessionShareDialog({
+  open,
+  onOpenChange,
+  sessionId,
+  onShare,
+}: SessionShareDialogProps) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleShare = async () => {
     if (!email) return
-    
+
     setLoading(true)
     try {
-      const userResponse = await api.get(`/user/email/${encodeURIComponent(email)}`)
+      const userResponse = await api.get(
+        `/user/email/${encodeURIComponent(email)}`
+      )
       const userId = userResponse.data.id
 
-      const shareResponse = await api.post(`/session/${sessionId}/share/user/${userId}`)
-      
+      const shareResponse = await api.post(
+        `/session/${sessionId}/share/user/${userId}`
+      )
+
       toast.success(shareResponse.data.message)
       setEmail('')
       onOpenChange(false)
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 
-        error.response?.data?.detail || 
-        error.message || 
-        'Failed to share session'
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          error.message ||
+          'Failed to share session'
       )
     } finally {
       setLoading(false)
@@ -55,13 +64,13 @@ export function SessionShareDialog({ open, onOpenChange, sessionId, onShare }: S
         <DialogHeader>
           <DialogTitle>Share Session</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+        <div className='space-y-4 py-4'>
+          <div className='space-y-2'>
+            <Label htmlFor='email'>Email</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="Enter email address"
+              id='email'
+              type='email'
+              placeholder='Enter email address'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -69,13 +78,26 @@ export function SessionShareDialog({ open, onOpenChange, sessionId, onShare }: S
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button
+            variant='outline'
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenChange(false)
+            }}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleShare} disabled={loading || !email}>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleShare()
+            }}
+            disabled={loading || !email}
+          >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                 Share
               </>
             ) : (
@@ -86,4 +108,4 @@ export function SessionShareDialog({ open, onOpenChange, sessionId, onShare }: S
       </DialogContent>
     </Dialog>
   )
-} 
+}

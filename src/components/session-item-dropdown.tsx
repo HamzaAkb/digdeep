@@ -21,17 +21,23 @@ export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionIte
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
+          <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dropdown-trigger">
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setShareDialogOpen(true)}>
+          <DropdownMenuItem onClick={(e) => {
+            e.stopPropagation();
+            setShareDialogOpen(true);
+          }}>
             Share
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-red-600 dark:text-red-400"
-            onClick={() => onDelete(sessionId)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(sessionId);
+            }}
           >
             Delete
           </DropdownMenuItem>

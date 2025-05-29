@@ -3,6 +3,7 @@ import Agents from '@/pages/agents'
 import AuthPage from '@/pages/auth'
 import Home from './pages/home'
 import ConfirmEmail from '@/pages/auth/confirm-email'
+import DownloadPage from '@/pages/download'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
@@ -32,6 +33,7 @@ export default function App() {
       <Routes>
         <Route path='/auth' element={<AuthPage />} />
         <Route path='/confirm-email' element={<ConfirmEmail />} />
+        <Route path='/downloads/:fileId' element={<DownloadPage />} />
 
         <Route element={<PrivateRoute />}>
           <Route element={<AppLayout />}>

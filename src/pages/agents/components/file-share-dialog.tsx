@@ -35,7 +35,7 @@ export function FileShareDialog({
     setLoading(true)
     try {
       const response = await api.post(
-        `/api/v1/session/${sessionId}/outputs/${encodeURIComponent(fileName)}/share`,
+        `/files/session/${sessionId}/outputs/${encodeURIComponent(fileName)}/share`,
         {
           description,
           expires_in_days: parseInt(expiresIn),

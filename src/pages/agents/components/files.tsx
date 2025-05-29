@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import ReactMarkdown from 'react-markdown'
-import { Download, Share2 } from 'lucide-react'
+import { Download, Share2, Mail } from 'lucide-react'
 import api from '@/lib/api'
 import {
   Tooltip,
@@ -16,6 +16,7 @@ import {
 } from '@/components/skeletons'
 import remarkGfm from 'remark-gfm'
 import { FileShareDialog } from './file-share-dialog'
+import { FileEmailDialog } from './file-email-dialog'
 
 interface FileMeta {
   name: string
@@ -34,6 +35,7 @@ export default function Files() {
   const [isLoading, setIsLoading] = useState(true)
   const [isContentLoading, setIsContentLoading] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
   const sinceRef = useRef<number>(0)
 
   useEffect(() => {
@@ -188,6 +190,11 @@ export default function Files() {
             <div className='flex items-center justify-between mb-2'>
               <h3 className='font-semibold'>{selected.name}</h3>
               <div className='flex items-center gap-4'>
+                <Mail
+                  className='cursor-pointer hover:text-blue-600'
+                  size={20}
+                  onClick={() => setEmailDialogOpen(true)}
+                />
                 <Share2
                   className='cursor-pointer hover:text-blue-600'
                   size={20}
@@ -263,12 +270,20 @@ export default function Files() {
       </main>
 
       {selected && (
-        <FileShareDialog
-          open={shareDialogOpen}
-          onOpenChange={setShareDialogOpen}
-          sessionId={sessionId!}
-          fileName={selected.name}
-        />
+        <>
+          <FileShareDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            sessionId={sessionId!}
+            fileName={selected.name}
+          />
+          <FileEmailDialog
+            open={emailDialogOpen}
+            onOpenChange={setEmailDialogOpen}
+            sessionId={sessionId!}
+            fileName={selected.name}
+          />
+        </>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
+import { MoreHorizontal } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -9,8 +10,16 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import { format } from 'date-fns'
 import api from '@/lib/api'
+import { SharedFileUpdateDialog } from './shared-file-update-dialog'
 
 interface SharedFile {
   id: number
@@ -29,24 +38,26 @@ export default function Shared() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedFile, setSelectedFile] = useState<SharedFile | null>(null)
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
+
+  const fetchSharedFiles = async () => {
+    try {
+      const { data } = await api.get(`/files/session/${sessionId}/shares`, {
+        params: {
+          skip: 0,
+          limit: 10
+        }
+      })
+      setSharedFiles(data)
+    } catch (error) {
+      console.error('Error fetching shared files:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchSharedFiles = async () => {
-      try {
-        const { data } = await api.get(`/files/session/${sessionId}/shares`, {
-          params: {
-            skip: 0,
-            limit: 10
-          }
-        })
-        setSharedFiles(data)
-      } catch (error) {
-        console.error('Error fetching shared files:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     if (sessionId) {
       fetchSharedFiles()
     }
@@ -67,6 +78,7 @@ export default function Shared() {
             <TableHead>Expires At</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Downloads</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -82,10 +94,39 @@ export default function Shared() {
                 </Badge>
               </TableCell>
               <TableCell>{file.download_count}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedFile(file)
+                        setUpdateDialogOpen(true)
+                      }}
+                    >
+                      Update
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {selectedFile && (
+        <SharedFileUpdateDialog
+          open={updateDialogOpen}
+          onOpenChange={setUpdateDialogOpen}
+          sharedFile={selectedFile}
+          onUpdate={fetchSharedFiles}
+        />
+      )}
     </div>
   )
 } 

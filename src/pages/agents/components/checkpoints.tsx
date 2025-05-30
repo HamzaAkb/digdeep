@@ -28,7 +28,7 @@ export default function Checkpoints() {
     setLoading(true)
     setError(null)
     api
-      .get(`/session/${sessionId}/checkpoints`, {
+      .get(`/session/checkpoint/${sessionId}/checkpoints`, {
         params: { page: 1, items_per_page: 50 },
       })
       .then((res) => setItems(res.data.data ?? []))
@@ -41,7 +41,7 @@ export default function Checkpoints() {
     setProcessingId(cp.checkpoint_id)
     try {
       await api.post(
-        `/session/${sessionId}/checkpoint/activate/${cp.checkpoint_id}`
+        `/session/checkpoint/${sessionId}/checkpoint/activate/${cp.checkpoint_id}`
       )
       setActiveId(cp.checkpoint_id)
       toast.success(`${cp.label} Activated`)
@@ -57,7 +57,7 @@ export default function Checkpoints() {
     setDeactivating(true)
     try {
       await api.post(
-        `/session/${sessionId}/checkpoint/deactivate`,
+        `/session/checkpoint/${sessionId}/checkpoint/deactivate`,
         {},
         { params: { store_changes: true } }
       )
@@ -73,7 +73,7 @@ export default function Checkpoints() {
   const handleDelete = async (cp: CheckpointItem) => {
     setDeletingId(cp.checkpoint_id)
     try {
-      await api.delete(`/session/checkpoint/${cp.checkpoint_id}`)
+      await api.delete(`/session/checkpoint/checkpoint/${cp.checkpoint_id}`)
       setItems((prev) =>
         prev.filter((i) => i.checkpoint_id !== cp.checkpoint_id)
       )

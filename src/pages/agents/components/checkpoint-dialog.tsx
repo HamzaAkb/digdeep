@@ -33,7 +33,7 @@ export default function CheckpointDialog({
     setLoading(true)
     try {
       await api.post(
-        `/session/${sessionId}/checkpoint`,
+        `/session/checkpoint/${sessionId}/checkpoint`,
         {},
         { params: { label } }
       )

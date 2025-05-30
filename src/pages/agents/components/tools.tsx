@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import Files from './files'
 import GenerateKPIs from './generate-kpis'
 import Checkpoints from './checkpoints'
+import Shared from './shared'
 
 export default function Tools() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -41,12 +42,21 @@ export default function Tools() {
         >
           Checkpoints
         </div>
+        <div
+          className={`${baseClasses} ${
+            tab === 3 && 'border-gray-800 dark:border-white'
+          }`}
+          onClick={() => setTab(3)}
+        >
+          Shared
+        </div>
       </div>
 
       <div className='flex-1 overflow-auto'>
         {tab === 0 && <Files />}
         {tab === 1 && <GenerateKPIs />}
         {tab === 2 && <Checkpoints />}
+        {tab === 3 && <Shared />}
       </div>
     </div>
   )

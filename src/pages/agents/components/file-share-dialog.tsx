@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import api from '@/lib/api'
 
 interface FileShareDialogProps {
@@ -30,6 +31,7 @@ export function FileShareDialog({
   const [description, setDescription] = useState('')
   const [expiresIn, setExpiresIn] = useState('10')
   const [loading, setLoading] = useState(false)
+  const [strategy, setStrategy] = useState('reuse')
 
   const handleShare = async () => {
     setLoading(true)
@@ -39,7 +41,7 @@ export function FileShareDialog({
         {
           description,
           expires_in_days: parseInt(expiresIn),
-          strategy: 'reuse'
+          strategy
         }
       )
 
@@ -86,6 +88,33 @@ export function FileShareDialog({
               onChange={(e) => setExpiresIn(e.target.value)}
               disabled={loading}
             />
+          </div>
+          <div className='space-y-2'>
+            <Label>Sharing Policy</Label>
+            <RadioGroup
+              value={strategy}
+              onValueChange={setStrategy}
+              className='mt-4'
+            >
+              <div className='flex items-start space-x-3'>
+                <RadioGroupItem value='reuse' id='reuse' className='mt-0.5' />
+                <Label htmlFor='reuse' className='font-normal leading-tight'>
+                  Reuse existing link if available
+                </Label>
+              </div>
+              <div className='flex items-start space-x-3'>
+                <RadioGroupItem value='rotate' id='rotate' className='mt-0.5' />
+                <Label htmlFor='rotate' className='font-normal leading-tight'>
+                  Deactivate existing link and create new
+                </Label>
+              </div>
+              <div className='flex items-start space-x-3'>
+                <RadioGroupItem value='new' id='new' className='mt-0.5' />
+                <Label htmlFor='new' className='font-normal leading-tight'>
+                  Always create new link
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </div>
         <DialogFooter>

@@ -57,6 +57,21 @@ export default function Shared() {
     }
   }
 
+  const handleDelete = async (fileId: number) => {
+    try {
+      await api.delete(`/files/share_links/${fileId}`)
+      setSharedFiles(prevFiles => 
+        prevFiles.map(file => 
+          file.id === fileId 
+            ? { ...file, is_active: false } 
+            : file
+        )
+      )
+    } catch (error) {
+      console.error('Error deleting shared file:', error)
+    }
+  }
+
   useEffect(() => {
     if (sessionId) {
       fetchSharedFiles()
@@ -110,6 +125,12 @@ export default function Shared() {
                       }}
                     >
                       Update
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(file.id)}
+                      className="text-red-600"
+                    >
+                      Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

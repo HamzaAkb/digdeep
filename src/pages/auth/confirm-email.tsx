@@ -28,7 +28,7 @@ export default function ConfirmEmail() {
         localStorage.setItem('user_details', JSON.stringify(data.user))
 
         toast.success('Email verified successfully!')
-        navigate('/')
+        navigate('/dashboard')
       } catch (error: any) {
         toast.error(error.response?.data?.message || 'Email verification failed')
         navigate('/auth')

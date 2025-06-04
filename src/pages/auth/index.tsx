@@ -54,7 +54,7 @@ export default function AuthPage() {
       const data = response.data
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user_details', JSON.stringify(data.user_details))
-      navigate('/')
+      navigate('/dashboard')
     } catch (err: any) {
       setError(
         err.response?.data?.detail ||

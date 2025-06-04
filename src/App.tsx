@@ -4,6 +4,7 @@ import AuthPage from '@/pages/auth'
 import ConfirmEmail from '@/pages/auth/confirm-email'
 import DownloadPage from '@/pages/download'
 import { LandingPage } from '@/pages/landingpage'
+import Dashboard from '@/pages/dashboard'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
@@ -38,7 +39,7 @@ export default function App() {
 
         <Route element={<PrivateRoute />}>
           <Route element={<AppLayout />}>
-            <Route path='/dashboard' element={<Agents />} />
+            <Route path='/dashboard' element={<Dashboard />} />
             <Route path='/session/:sessionId' element={<Agents />} />
           </Route>
         </Route>

@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SessionShareDialog } from './session-share-dialog'
+import { PublicShareDialog } from './public-share-dialog'
 
 interface SessionItemDropdownProps {
   sessionId: string
@@ -16,6 +17,7 @@ interface SessionItemDropdownProps {
 
 export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionItemDropdownProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [publicShareDialogOpen, setPublicShareDialogOpen] = useState(false)
 
   return (
     <>
@@ -31,6 +33,12 @@ export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionIte
             setShareDialogOpen(true);
           }}>
             Share
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => {
+            e.stopPropagation();
+            setPublicShareDialogOpen(true);
+          }}>
+            Public Share
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-red-600 dark:text-red-400"
@@ -49,6 +57,11 @@ export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionIte
         onOpenChange={setShareDialogOpen}
         sessionId={sessionId}
         onShare={onShare}
+      />
+      <PublicShareDialog
+        open={publicShareDialogOpen}
+        onOpenChange={setPublicShareDialogOpen}
+        sessionId={sessionId}
       />
     </>
   )

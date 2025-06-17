@@ -18,13 +18,18 @@ import remarkGfm from 'remark-gfm'
 import { FileShareDialog } from './file-share-dialog'
 import { FileEmailDialog } from './file-email-dialog'
 
+interface FilesProps {
+  isSharedSession?: boolean
+  visitorId?: string
+}
+
 interface FileMeta {
   name: string
   size: number
   modified: number
 }
 
-export default function Files() {
+export default function Files({ isSharedSession = false, visitorId }: FilesProps) {
   const { sessionId } = useParams<{ sessionId: string }>()
 
   const [files, setFiles] = useState<FileMeta[]>([])

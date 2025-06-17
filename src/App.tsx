@@ -8,6 +8,7 @@ import Dashboard from '@/pages/dashboard'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
+import SharedSession from '@/pages/shared-session'
 
 function PrivateRoute() {
   const token = localStorage.getItem('access_token')
@@ -36,6 +37,7 @@ export default function App() {
         <Route path='/auth' element={<AuthPage />} />
         <Route path='/confirm-email' element={<ConfirmEmail />} />
         <Route path='/downloads/:fileId' element={<DownloadPage />} />
+        <Route path='/share/:shareToken' element={<SharedSession />} />
 
         <Route element={<PrivateRoute />}>
           <Route element={<AppLayout />}>

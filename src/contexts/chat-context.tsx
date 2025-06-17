@@ -15,14 +15,26 @@ interface ChatContextType {
   sendTask: (task: string) => Promise<void>
 }
 
+interface ChatProviderProps {
+  children: ReactNode
+  isSharedSession?: boolean
+  visitorId?: string
+  sessionLabel?: string
+}
+
 export const ChatContext = createContext<ChatContextType>({
   messages: [],
   streaming: false,
   sendTask: async () => {},
 })
 
-export function ChatProvider({ children }: { children: ReactNode }) {
-  const { sessionId } = useParams<{ sessionId: string }>()
+export function ChatProvider({ 
+  children, 
+  isSharedSession = false, 
+  visitorId, 
+  sessionLabel 
+}: ChatProviderProps) {
+  const { sessionId, shareToken } = useParams<{ sessionId: string, shareToken: string }>()
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'user',
@@ -49,27 +61,42 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ...prev,
         { sender: 'user', text: task, timestamp: new Date().toISOString() },
       ])
-      if (!sessionId) return
+
+      const currentSessionId = isSharedSession ? shareToken : sessionId
+      if (!currentSessionId) return
 
       setStreaming(true)
       try {
-        const token = localStorage.getItem('access_token') ?? ''
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        }
+
+        if (isSharedSession && visitorId) {
+          headers['X-Visitor-Id'] = visitorId
+        } else {
+          const token = localStorage.getItem('access_token')
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`
+          }
+        }
+
+        const endpoint = isSharedSession 
+          ? `/public/${currentSessionId}/run`
+          : `/session/run_task_v2/${currentSessionId}`
+
+        console.log('Making API call to:', endpoint, 'with headers:', headers)
+
         const res = await fetch(
-          `${
-            import.meta.env.VITE_API_URL
-          }/session/run_task_v2/${sessionId}`,
+          `${import.meta.env.VITE_API_URL}${endpoint}`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ task, log_iter: 3 }),
+            headers,
+            body: JSON.stringify({ task, log_iter: 3, red_report: false }),
           }
         )
         if (!res.ok || !res.body) {
-          console.error('run_task_v2 error:', res.statusText)
+          console.error('run_task error:', res.statusText)
           return
         }
 
@@ -108,12 +135,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (err) {
-        console.error('run_task_v2 failed:', err)
+        console.error('run_task failed:', err)
       } finally {
         setStreaming(false)
       }
     },
-    [sessionId]
+    [sessionId, shareToken, isSharedSession, visitorId]
   )
 
   return (

@@ -65,6 +65,7 @@ export default function Chatbot() {
 
             <div ref={bottomRef} />
           </div>
+          
           <div className='relative'>
             <Textarea
               placeholder='Type your message…'

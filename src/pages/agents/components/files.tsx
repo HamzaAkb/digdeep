@@ -30,7 +30,7 @@ interface FileMeta {
 }
 
 export default function Files({ isSharedSession = false, visitorId }: FilesProps) {
-  const { sessionId } = useParams<{ sessionId: string }>()
+  const { sessionId, shareToken } = useParams<{ sessionId: string; shareToken: string }>()
 
   const [files, setFiles] = useState<FileMeta[]>([])
   const [selected, setSelected] = useState<FileMeta | null>(null)
@@ -48,24 +48,38 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
 
     const poll = async () => {
       try {
-        const res = await api.get<{ files: FileMeta[] }>(
-          `/session/${sessionId}/outputs`,
-          { params: { since: sinceRef.current } }
-        )
+        let res
+        if (isSharedSession && visitorId) {
+          res = await api.get<{ files: FileMeta[] }>(
+            `/public/${shareToken}/files/${visitorId}`,
+            { params: { since: sinceRef.current } }
+          )
+        } else {
+          res = await api.get<{ files: FileMeta[] }>(
+            `/session/${sessionId}/outputs`,
+            { params: { since: sinceRef.current } }
+          )
+        }
         const newFiles = res.data.files
         if (cancelled || newFiles.length === 0) return
 
         setFiles((prev) => {
           const fileMap = new Map(prev.map(f => [f.name, f]))
           
+          const actuallyNewFiles: FileMeta[] = []
+          
           newFiles.forEach(file => {
+            const existingFile = fileMap.get(file.name)
+            if (!existingFile) {
+              actuallyNewFiles.push(file)
+            }
             fileMap.set(file.name, file)
           })
           
           const sortedFiles = Array.from(fileMap.values())
             .sort((a, b) => (b.modified || 0) - (a.modified || 0))
           
-          if (newFiles.length > 0) {
+          if (actuallyNewFiles.length > 0 && !selected) {
             const mostRecentFile = sortedFiles[0]
             setSelected(mostRecentFile)
           }
@@ -90,7 +104,7 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
       cancelled = true
       clearInterval(id)
     }
-  }, [sessionId])
+  }, [sessionId, shareToken])
 
   useEffect(() => {
     if (!selected) return
@@ -103,9 +117,12 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
 
     const fetchFile = async () => {
       try {
-        const path = `/session/${sessionId}/outputs/${encodeURIComponent(
-          selected.name
-        )}`
+        let path
+        if (isSharedSession && shareToken && visitorId) {
+          path = `/public/${shareToken}/files/${visitorId}/${encodeURIComponent(selected.name)}`
+        } else {
+          path = `/session/${sessionId}/outputs/${encodeURIComponent(selected.name)}`
+        }
 
         if (selected.name.toLowerCase().endsWith('.csv')) {
           const res = await api.get<string>(path, { responseType: 'text' })
@@ -133,15 +150,19 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [selected, sessionId])
+  }, [selected?.name, sessionId, isSharedSession, shareToken, visitorId])
 
   const downloadFile = async () => {
     if (!selected) return
     try {
-      const res = await api.get<Blob>(
-        `/session/${sessionId}/outputs/${encodeURIComponent(selected.name)}`,
-        { responseType: 'blob' }
-      )
+      let path
+      if (isSharedSession && shareToken && visitorId) {
+        path = `/public/${shareToken}/files/${visitorId}/${encodeURIComponent(selected.name)}`
+      } else {
+        path = `/session/${sessionId}/outputs/${encodeURIComponent(selected.name)}`
+      }
+      
+      const res = await api.get<Blob>(path, { responseType: 'blob' })
       const downloadUrl = URL.createObjectURL(res.data)
       const a = document.createElement('a')
       a.href = downloadUrl

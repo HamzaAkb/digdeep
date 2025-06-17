@@ -142,7 +142,6 @@ export default function SharedSession() {
             <ChatProvider
               isSharedSession={true}
               visitorId={visitorId}
-              sessionLabel={sessionInfo.label}
             >
               <Chatbot />
             </ChatProvider>

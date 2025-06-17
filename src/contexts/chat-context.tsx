@@ -13,26 +13,26 @@ interface ChatContextType {
   messages: Message[]
   streaming: boolean
   sendTask: (task: string) => Promise<void>
+  isSharedSession: boolean
 }
 
 interface ChatProviderProps {
   children: ReactNode
   isSharedSession?: boolean
   visitorId?: string
-  sessionLabel?: string
 }
 
 export const ChatContext = createContext<ChatContextType>({
   messages: [],
   streaming: false,
   sendTask: async () => {},
+  isSharedSession: false,
 })
 
 export function ChatProvider({ 
   children, 
   isSharedSession = false, 
   visitorId, 
-  sessionLabel 
 }: ChatProviderProps) {
   const { sessionId, shareToken } = useParams<{ sessionId: string, shareToken: string }>()
   const [messages, setMessages] = useState<Message[]>([
@@ -144,7 +144,7 @@ export function ChatProvider({
   )
 
   return (
-    <ChatContext.Provider value={{ messages, streaming, sendTask }}>
+    <ChatContext.Provider value={{ messages, streaming, sendTask, isSharedSession }}>
       {children}
     </ChatContext.Provider>
   )

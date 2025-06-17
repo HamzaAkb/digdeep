@@ -7,7 +7,7 @@ import CheckpointDialog from './checkpoint-dialog'
 import TemplateDialog from './template-dialog'
 
 export default function Chatbot() {
-  const { messages, streaming, sendTask } = useContext(ChatContext)
+  const { messages, streaming, sendTask, isSharedSession } = useContext(ChatContext)
   const bottomRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
   const [cpOpen, setCpOpen] = useState(false)
@@ -36,7 +36,7 @@ export default function Chatbot() {
                       </div>
                     )}
 
-                    {i === lastBotIndex && !streaming && (
+                    {i === lastBotIndex && !streaming && !isSharedSession && (
                       <button
                         onClick={() => setCpOpen(true)}
                         className='mt-2 inline-flex items-center space-x-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 font-semibold px-3 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-700'

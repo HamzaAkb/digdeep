@@ -5,16 +5,20 @@ import { Input } from '@/components/ui/input'
 import { ChatContext } from '@/contexts/chat-context'
 import api from '@/lib/api'
 
-type KPI = {
+export type KPI = {
   title: string
   description: string
 }
 
-export default function GenerateKPIs() {
+type GenerateKPIsProps = {
+  kpis: KPI[]
+  setKpis: React.Dispatch<React.SetStateAction<KPI[]>>
+}
+
+export default function GenerateKPIs({ kpis, setKpis }: GenerateKPIsProps) {
   const { sessionId } = useParams<{ sessionId: string }>()
   const { sendTask } = useContext(ChatContext)
   const [goal, setGoal] = useState('')
-  const [kpis, setKpis] = useState<KPI[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

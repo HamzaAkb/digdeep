@@ -7,7 +7,7 @@ import CheckpointDialog from './checkpoint-dialog'
 import TemplateDialog from './template-dialog'
 
 export default function Chatbot() {
-  const { messages, streaming, sendTask, isSharedSession } = useContext(ChatContext)
+  const { messages, streaming, sendTask, isSharedSession, sendReportTask } = useContext(ChatContext)
   const bottomRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
   const [cpOpen, setCpOpen] = useState(false)
@@ -89,7 +89,11 @@ export default function Chatbot() {
                   const t = input.trim()
                   if (!t) return
                   setInput('')
-                  sendTask(t)
+                  if (reportChecked) {
+                    sendReportTask(t)
+                  } else {
+                    sendTask(t)
+                  }
                 }
               }}
             />
@@ -103,7 +107,11 @@ export default function Chatbot() {
                 const t = input.trim()
                 if (!t) return
                 setInput('')
-                sendTask(t)
+                if (reportChecked) {
+                  sendReportTask(t)
+                } else {
+                  sendTask(t)
+                }
               }}
             />
           </div>

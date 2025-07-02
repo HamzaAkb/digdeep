@@ -12,6 +12,7 @@ export default function Chatbot() {
   const [input, setInput] = useState('')
   const [cpOpen, setCpOpen] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
+  const [reportChecked, setReportChecked] = useState(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -66,7 +67,17 @@ export default function Chatbot() {
             <div ref={bottomRef} />
           </div>
           
-          <div className='relative'>
+          <div className="relative flex items-end">
+            <button
+              type="button"
+              aria-pressed={reportChecked}
+              onClick={() => setReportChecked((v) => !v)}
+              className={`absolute bottom-3 left-3 flex items-center gap-1 px-2 py-1 rounded transition-colors text-xs font-medium
+                ${reportChecked ? 'bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 border border-blue-600 dark:border-blue-900' : 'bg-muted text-muted-foreground hover:bg-accent border border-transparent'}`}
+            >
+              <Bookmark className="h-4 w-4" />
+              Report
+            </button>
             <Textarea
               placeholder='Type your message…'
               className='h-24'

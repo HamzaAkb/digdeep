@@ -271,7 +271,14 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
             ) : imgUrl ? (
               <img src={imgUrl} alt={selected.name} className='max-w-full' />
             ) : selected.name.toLowerCase().endsWith('.html') ? (
-              <div className='prose dark:prose-invert max-w-none' dangerouslySetInnerHTML={{ __html: textContent || 'No content available' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <iframe
+                  srcDoc={textContent || 'No content available'}
+                  style={{ width: '100%', height: '100%', minHeight: 400, border: 'none' }}
+                  sandbox="allow-scripts allow-same-origin"
+                  title={selected.name}
+                />
+              </div>
             ) : (
               <div className='prose dark:prose-invert max-w-none'>
                 <ReactMarkdown 

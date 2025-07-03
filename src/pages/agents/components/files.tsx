@@ -270,6 +270,8 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
               </div>
             ) : imgUrl ? (
               <img src={imgUrl} alt={selected.name} className='max-w-full' />
+            ) : selected.name.toLowerCase().endsWith('.html') ? (
+              <div className='prose dark:prose-invert max-w-none' dangerouslySetInnerHTML={{ __html: textContent || 'No content available' }} />
             ) : (
               <div className='prose dark:prose-invert max-w-none'>
                 <ReactMarkdown 

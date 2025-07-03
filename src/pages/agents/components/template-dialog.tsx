@@ -1,113 +1,102 @@
-import { useContext, useState } from 'react'
-import { format } from 'date-fns'
-import { ChatContext } from '@/contexts/chat-context'
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { CalendarIcon } from 'lucide-react'
-import { DateRange } from 'react-day-picker'
-import { generateRedReportTaskDefinition } from '@/queries'
+  DialogDescription,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import templatesData from "@/lib/templates.json";
+import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 
-export interface TemplateDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+interface TemplateDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (templateHtml: string) => void;
 }
 
-export default function TemplateDialog({
-  open,
-  onOpenChange,
-}: TemplateDialogProps) {
-  const { sendTask } = useContext(ChatContext)
-  const [redReportChecked, setRedReportChecked] = useState(false)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-  const [calendarOpen, setCalendarOpen] = useState(false)
-
-  const handleDateSelect = (range: DateRange | undefined) => {
-    setDateRange(range)
-    if (range?.to) setCalendarOpen(false)
-  }
-
-  const handleRun = () => {
-    if (redReportChecked && dateRange?.from && dateRange.to) {
-      const start = format(dateRange.from, 'yyyy-MM-dd')
-      const end = format(dateRange.to, 'yyyy-MM-dd')
-      const payload = generateRedReportTaskDefinition(start, end)
-      sendTask(JSON.stringify(payload))
-      onOpenChange(false)
-    }
-  }
+export function TemplateDialog({ open, onOpenChange, onSelect }: TemplateDialogProps) {
+  const [selectedIdx, setSelectedIdx] = useState<number>(0);
+  const templates = templatesData.templates;
+  const selectedTemplate = templates[selectedIdx];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-4xl w-full'>
-        <DialogHeader>
-          <DialogTitle>Templates</DialogTitle>
-        </DialogHeader>
-
-        <div className='flex items-center justify-between mb-4'>
-          <label className='flex items-center space-x-2'>
-            <input
-              type='checkbox'
-              checked={redReportChecked}
-              onChange={() => setRedReportChecked((c) => !c)}
-              className='h-4 w-4'
-            />
-            <span className='text-sm'>Red Report</span>
-          </label>
-          <div className='relative'>
-            <Button
-              variant='outline'
-              className={
-                dateRange
-                  ? 'w-[300px] justify-start text-left'
-                  : 'w-[300px] justify-start text-left text-muted-foreground'
-              }
-              onClick={() => setCalendarOpen((o) => !o)}
-            >
-              <CalendarIcon className='mr-2' />
-              {dateRange?.from
-                ? dateRange.to
-                  ? `${format(dateRange.from, 'LLL dd, y')} - ${format(
-                      dateRange.to,
-                      'LLL dd, y'
-                    )}`
-                  : format(dateRange.from, 'LLL dd, y')
-                : 'Pick a date'}
-            </Button>
-
-            {calendarOpen && (
-              <div className='absolute z-50 mt-2 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg'>
-                <Calendar
-                  initialFocus
-                  mode='range'
-                  defaultMonth={dateRange?.from || new Date()}
-                  selected={dateRange}
-                  onSelect={handleDateSelect}
-                  numberOfMonths={2}
+      <DialogContent className="overflow-hidden p-0 md:max-h-[800px] md:max-w-[1100px] lg:max-w-[1200px]">
+        <DialogTitle className="sr-only">Select a Report Template</DialogTitle>
+        <DialogDescription className="sr-only">
+          Choose a template to use for your report.
+        </DialogDescription>
+        <SidebarProvider className="items-start">
+          <Sidebar collapsible="none" className="hidden md:flex">
+            <SidebarContent>
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {templates.map((tpl, idx) => (
+                      <SidebarMenuItem key={tpl.name}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={selectedIdx === idx}
+                        >
+                          <button
+                            type="button"
+                            className="w-full flex items-center gap-2 px-2 py-2 text-left"
+                            onClick={() => setSelectedIdx(idx)}
+                          >
+                            <span className="font-semibold">{tpl.name}</span>
+                          </button>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
+          <main className="flex h-[740px] flex-1 flex-col overflow-hidden">
+            <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+              <div className="font-semibold text-lg">{selectedTemplate.name}</div>
+            </header>
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+              <div className="mb-2 font-medium text-base">{selectedTemplate.description}</div>
+              <div className="border rounded overflow-hidden bg-white w-full h-[600px]">
+                <iframe
+                  title="Template Preview"
+                  srcDoc={selectedTemplate.template}
+                  style={{ width: "100%", height: "100%", border: "none", background: "white" }}
                 />
               </div>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleRun}
-            disabled={!redReportChecked || !dateRange?.to}
-          >
-            Run
-          </Button>
-        </DialogFooter>
+            </div>
+            <DialogFooter className="px-4 pb-4">
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button
+                onClick={() => {
+                  if (selectedTemplate) {
+                    onSelect(selectedTemplate.template);
+                    onOpenChange(false);
+                  }
+                }}
+              >
+                Use this Template
+              </Button>
+            </DialogFooter>
+          </main>
+        </SidebarProvider>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

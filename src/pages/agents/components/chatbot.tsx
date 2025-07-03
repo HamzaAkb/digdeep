@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { SendHorizontal, Bookmark, FileText } from 'lucide-react'
 import { FormattedBotResponse } from './formatted-bot-response'
 import CheckpointDialog from './checkpoint-dialog'
-import TemplateDialog from './template-dialog'
+import { TemplateDialog } from './template-dialog'
 
 export default function Chatbot() {
   const { messages, streaming, sendTask, isSharedSession, sendReportTask } = useContext(ChatContext)
@@ -13,6 +13,7 @@ export default function Chatbot() {
   const [cpOpen, setCpOpen] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
   const [reportChecked, setReportChecked] = useState(false)
+  const [reportHtmlTemplate, setReportHtmlTemplate] = useState<string | null>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -78,6 +79,16 @@ export default function Chatbot() {
               <Bookmark className="h-4 w-4" />
               Report
             </button>
+            {reportChecked && (
+              <button
+                type="button"
+                onClick={() => setTemplateOpen(true)}
+                className="absolute bottom-3 left-24 flex items-center gap-1 px-2 py-1 rounded transition-colors text-xs font-medium bg-muted text-muted-foreground hover:bg-accent border border-transparent"
+              >
+                <FileText className="h-4 w-4" />
+                Templates
+              </button>
+            )}
             <Textarea
               placeholder='Type your message…'
               className='h-24'
@@ -90,16 +101,12 @@ export default function Chatbot() {
                   if (!t) return
                   setInput('')
                   if (reportChecked) {
-                    sendReportTask(t)
+                    sendReportTask(t, reportHtmlTemplate || undefined)
                   } else {
                     sendTask(t)
                   }
                 }
               }}
-            />
-            <FileText
-              className='size-4 absolute bottom-3 right-10 cursor-pointer'
-              onClick={() => setTemplateOpen(true)}
             />
             <SendHorizontal
               className='size-4 absolute bottom-3 right-3 cursor-pointer'
@@ -108,7 +115,7 @@ export default function Chatbot() {
                 if (!t) return
                 setInput('')
                 if (reportChecked) {
-                  sendReportTask(t)
+                  sendReportTask(t, reportHtmlTemplate || undefined)
                 } else {
                   sendTask(t)
                 }
@@ -119,7 +126,11 @@ export default function Chatbot() {
       </div>
 
       <CheckpointDialog open={cpOpen} onOpenChange={setCpOpen} />
-      <TemplateDialog open={templateOpen} onOpenChange={setTemplateOpen} />
+      <TemplateDialog
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        onSelect={(tpl: string) => setReportHtmlTemplate(tpl)}
+      />
     </>
   )
 }

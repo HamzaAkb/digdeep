@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SessionShareDialog } from './session-share-dialog'
 import { PublicShareDialog } from './public-share-dialog'
+import { CopySessionDialog } from './copy-session-dialog'
 
 interface SessionItemDropdownProps {
   sessionId: string
@@ -18,6 +19,7 @@ interface SessionItemDropdownProps {
 export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionItemDropdownProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [publicShareDialogOpen, setPublicShareDialogOpen] = useState(false)
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false)
 
   return (
     <>
@@ -40,6 +42,12 @@ export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionIte
           }}>
             Public Share
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => {
+            e.stopPropagation();
+            setCopyDialogOpen(true);
+          }}>
+            Duplicate
+          </DropdownMenuItem>
           <DropdownMenuItem
             className="text-red-600 dark:text-red-400"
             onClick={(e) => {
@@ -61,6 +69,11 @@ export function SessionItemDropdown({ sessionId, onDelete, onShare }: SessionIte
       <PublicShareDialog
         open={publicShareDialogOpen}
         onOpenChange={setPublicShareDialogOpen}
+        sessionId={sessionId}
+      />
+      <CopySessionDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
         sessionId={sessionId}
       />
     </>

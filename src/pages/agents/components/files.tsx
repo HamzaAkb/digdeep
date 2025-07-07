@@ -17,6 +17,9 @@ import {
 import remarkGfm from 'remark-gfm'
 import { FileShareDialog } from './file-share-dialog'
 import { FileEmailDialog } from './file-email-dialog'
+import Papa from 'papaparse'
+import { FixedSizeGrid as Grid } from 'react-window'
+import { useTheme } from '@/components/theme-provider'
 
 interface FilesProps {
   isSharedSession?: boolean
@@ -29,8 +32,37 @@ interface FileMeta {
   modified: number
 }
 
-export default function Files({ isSharedSession = false, visitorId }: FilesProps) {
-  const { sessionId, shareToken } = useParams<{ sessionId: string; shareToken: string }>()
+function useContainerSize<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  useEffect(() => {
+    if (!ref.current) return
+    const element = ref.current
+    setSize({
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    })
+    const observer = new ResizeObserver((entries) => {
+      if (!Array.isArray(entries)) return
+      if (!entries.length) return
+      const rect = entries[0].contentRect
+      setSize({ width: rect.width, height: rect.height })
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [ref.current])
+  return [ref, size.width, size.height] as const
+}
+
+export default function Files({
+  isSharedSession = false,
+  visitorId,
+}: FilesProps) {
+  const { sessionId, shareToken } = useParams<{
+    sessionId: string
+    shareToken: string
+  }>()
+  const { theme } = useTheme()
 
   const [files, setFiles] = useState<FileMeta[]>([])
   const [selected, setSelected] = useState<FileMeta | null>(null)
@@ -42,10 +74,11 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
   const sinceRef = useRef<number>(0)
+  const isDarkMode = theme === 'dark'
+  const [containerRef, containerWidth, containerHeight] = useContainerSize<HTMLDivElement>()
 
   useEffect(() => {
     let cancelled = false
-
     const poll = async () => {
       try {
         let res
@@ -62,31 +95,25 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
         }
         const newFiles = res.data.files
         if (cancelled || newFiles.length === 0) return
-
         setFiles((prev) => {
-          const fileMap = new Map(prev.map(f => [f.name, f]))
-          
+          const fileMap = new Map(prev.map((f) => [f.name, f]))
           const actuallyNewFiles: FileMeta[] = []
-          
-          newFiles.forEach(file => {
+          newFiles.forEach((file) => {
             const existingFile = fileMap.get(file.name)
             if (!existingFile) {
               actuallyNewFiles.push(file)
             }
             fileMap.set(file.name, file)
           })
-          
-          const sortedFiles = Array.from(fileMap.values())
-            .sort((a, b) => (b.modified || 0) - (a.modified || 0))
-          
+          const sortedFiles = Array.from(fileMap.values()).sort(
+            (a, b) => (b.modified || 0) - (a.modified || 0)
+          )
           if (actuallyNewFiles.length > 0 && !selected) {
             const mostRecentFile = sortedFiles[0]
             setSelected(mostRecentFile)
           }
-          
           return sortedFiles
         })
-
         const maxTs = Math.max(
           ...newFiles.map((f) => f.modified || sinceRef.current)
         )
@@ -97,7 +124,6 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
         setIsLoading(false)
       }
     }
-
     poll()
     const id = setInterval(poll, 10_000)
     return () => {
@@ -112,43 +138,54 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
     setImgUrl('')
     setCsvData([])
     setIsContentLoading(true)
-
     let objectUrl: string | null = null
-
+    let papaTask: any = null
     const fetchFile = async () => {
       try {
         let path
         if (isSharedSession && shareToken && visitorId) {
-          path = `/public/${shareToken}/files/${visitorId}/${encodeURIComponent(selected.name)}`
+          path = `/public/${shareToken}/files/${visitorId}/${encodeURIComponent(
+            selected.name
+          )}`
         } else {
-          path = `/session/${sessionId}/outputs/${encodeURIComponent(selected.name)}`
+          path = `/session/${sessionId}/outputs/${encodeURIComponent(
+            selected.name
+          )}`
         }
-
         if (selected.name.toLowerCase().endsWith('.csv')) {
           const res = await api.get<string>(path, { responseType: 'text' })
-          const rows = res.data
-            .trim()
-            .split('\n')
-            .map((line) => line.split(','))
-          setCsvData(rows)
+          papaTask = Papa.parse(res.data, {
+            worker: true,
+            skipEmptyLines: true,
+            complete: (results: any) => {
+              setCsvData(results.data)
+              setIsContentLoading(false)
+            },
+            error: (err) => {
+              console.error('CSV parse error:', err)
+              setIsContentLoading(false)
+            },
+          })
         } else if (/(png|jpe?g|gif)$/i.test(selected.name)) {
           const res = await api.get<Blob>(path, { responseType: 'blob' })
           objectUrl = URL.createObjectURL(res.data)
           setImgUrl(objectUrl)
+          setIsContentLoading(false)
         } else {
           const res = await api.get<string>(path, { responseType: 'text' })
           setTextContent(res.data)
+          setIsContentLoading(false)
         }
       } catch (err) {
         console.error('Fetch file error:', err)
-      } finally {
         setIsContentLoading(false)
       }
     }
-
     fetchFile()
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl)
+      if (papaTask && papaTask.abort) papaTask.abort()
+      setCsvData([])
     }
   }, [selected?.name, sessionId, isSharedSession, shareToken, visitorId])
 
@@ -157,11 +194,14 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
     try {
       let path
       if (isSharedSession && shareToken && visitorId) {
-        path = `/public/${shareToken}/files/${visitorId}/${encodeURIComponent(selected.name)}`
+        path = `/public/${shareToken}/files/${visitorId}/${encodeURIComponent(
+          selected.name
+        )}`
       } else {
-        path = `/session/${sessionId}/outputs/${encodeURIComponent(selected.name)}`
+        path = `/session/${sessionId}/outputs/${encodeURIComponent(
+          selected.name
+        )}`
       }
-      
       const res = await api.get<Blob>(path, { responseType: 'blob' })
       const downloadUrl = URL.createObjectURL(res.data)
       const a = document.createElement('a')
@@ -175,6 +215,43 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
       console.error('Download error:', err)
     }
   }
+
+  const columnCount = csvData[0]?.length ?? 0;
+  const rowCount = Math.max(csvData.length - 1, 0);
+  const rowHeight = 36;
+  const minColWidth = 120;
+  const maxGridWidth = containerWidth ? containerWidth : 800;
+  const idealColWidth = columnCount > 0 ? Math.floor(maxGridWidth / columnCount) : minColWidth;
+  const colWidth = columnCount > 0 ? Math.max(minColWidth, idealColWidth) : minColWidth;
+  const gridWidth = columnCount * colWidth < maxGridWidth ? maxGridWidth : columnCount * colWidth;
+  const headerHeight = rowHeight;
+  const actionsHeight = 52 + 8;
+  const totalHeaderHeight = headerHeight + actionsHeight;
+  const gridHeight = rowCount <= 0 ? 0 : Math.max(0, Math.min(rowCount * rowHeight, (containerHeight || 500) - totalHeaderHeight));
+
+  const cellBg = (rowIndex: number) =>
+    isDarkMode
+      ? rowIndex % 2 === 0
+        ? '#18181b'
+        : '#27272a'
+      : rowIndex % 2 === 0
+      ? '#fff'
+      : '#f9fafb';
+
+  const Cell = ({
+    columnIndex,
+    rowIndex,
+    style,
+  }: {
+    columnIndex: number
+    rowIndex: number
+    style: React.CSSProperties
+  }) => (
+    <div className="box-border p-2 truncate border border-gray-200 dark:border-zinc-700 text-black dark:text-white text-[0.96rem]"
+      style={{ ...style, background: cellBg(rowIndex) }}>
+      {csvData[rowIndex + 1][columnIndex]}
+    </div>
+  )
 
   return (
     <div className='h-full flex'>
@@ -207,13 +284,17 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
           )}
         </TooltipProvider>
       </aside>
-
-      <main className='flex-1 p-4 overflow-y-auto'>
+      <main
+        className='flex-1 p-4 overflow-y-auto flex flex-col h-full min-h-0'
+        ref={containerRef}
+      >
         {!selected ? (
           <p className='text-gray-500'>Select a file to view its contents.</p>
         ) : (
           <>
-            <div className='flex items-center justify-between mb-2'>
+            <div
+              className='flex items-center justify-between mb-2 min-h-[52px]'
+            >
               <h3 className='font-semibold'>{selected.name}</h3>
               <div className='flex items-center gap-4'>
                 <Mail
@@ -233,7 +314,6 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
                 />
               </div>
             </div>
-
             {isContentLoading ? (
               selected.name.toLowerCase().endsWith('.csv') ? (
                 <TableSkeleton />
@@ -241,59 +321,89 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
                 <ContentSkeleton />
               )
             ) : csvData.length > 0 ? (
-              <div className='overflow-auto'>
-                <table className='min-w-full border-collapse text-sm'>
-                  <thead>
-                    <tr>
-                      {csvData[0].map((col, j) => (
-                        <th
-                          key={j}
-                          className='border px-2 py-1 font-medium text-left'
-                        >
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {csvData.slice(1).map((row, i) => (
-                      <tr key={i}>
-                        {row.map((cell, j) => (
-                          <td key={j} className='border px-2 py-1'>
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex-1 flex flex-col w-full min-w-0 max-w-full h-full overflow-auto">
+                <div
+                  className="flex min-w-full flex-none"
+                  style={{
+                    width: gridWidth,
+                    height: headerHeight,
+                  }}
+                >
+                  {csvData[0].map((col, j) => (
+                    <div
+                      key={j}
+                      className="box-border flex-none p-2 font-bold truncate text-[0.98rem] bg-gray-100 dark:bg-zinc-800 text-black dark:text-white border border-gray-200 dark:border-zinc-700"
+                      style={{
+                        width: colWidth,
+                        height: headerHeight,
+                      }}
+                    >
+                      {col}
+                    </div>
+                  ))}
+                </div>
+                {rowCount > 0 && gridHeight > 0 && (
+                  <Grid
+                    columnCount={columnCount}
+                    columnWidth={colWidth}
+                    height={gridHeight}
+                    rowCount={rowCount}
+                    rowHeight={rowHeight}
+                    width={gridWidth}
+                  >
+                    {Cell}
+                  </Grid>
+                )}
               </div>
             ) : imgUrl ? (
               <img src={imgUrl} alt={selected.name} className='max-w-full' />
             ) : selected.name.toLowerCase().endsWith('.html') ? (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div className="flex flex-col h-full">
                 <iframe
                   srcDoc={textContent || 'No content available'}
-                  style={{ width: '100%', height: '100%', minHeight: 400, border: 'none' }}
-                  sandbox="allow-scripts allow-same-origin"
+                  className="w-full h-full min-h-[400px] border-none"
+                  sandbox='allow-scripts allow-same-origin'
                   title={selected.name}
                 />
               </div>
             ) : (
               <div className='prose dark:prose-invert max-w-none'>
-                <ReactMarkdown 
+                <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2" {...props} />,
-                    p: ({node, ...props}) => <p className="mb-4" {...props} />,
-                    ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4" {...props} />,
-                    ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4" {...props} />,
-                    li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                    table: ({node, ...props}) => <table className="min-w-full border-collapse mb-4" {...props} />,
-                    th: ({node, ...props}) => <th className="border px-4 py-2 text-left" {...props} />,
-                    td: ({node, ...props}) => <td className="border px-4 py-2" {...props} />,
+                    h1: ({ node, ...props }) => (
+                      <h1 className='text-2xl font-bold mb-4' {...props} />
+                    ),
+                    h2: ({ node, ...props }) => (
+                      <h2 className='text-xl font-bold mb-3' {...props} />
+                    ),
+                    h3: ({ node, ...props }) => (
+                      <h3 className='text-lg font-bold mb-2' {...props} />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p className='mb-4' {...props} />
+                    ),
+                    ul: ({ node, ...props }) => (
+                      <ul className='list-disc pl-6 mb-4' {...props} />
+                    ),
+                    ol: ({ node, ...props }) => (
+                      <ol className='list-decimal pl-6 mb-4' {...props} />
+                    ),
+                    li: ({ node, ...props }) => (
+                      <li className='mb-1' {...props} />
+                    ),
+                    table: ({ node, ...props }) => (
+                      <table
+                        className='min-w-full border-collapse mb-4'
+                        {...props}
+                      />
+                    ),
+                    th: ({ node, ...props }) => (
+                      <th className='border px-4 py-2 text-left' {...props} />
+                    ),
+                    td: ({ node, ...props }) => (
+                      <td className='border px-4 py-2' {...props} />
+                    ),
                   }}
                 >
                   {textContent || 'No content available'}
@@ -303,7 +413,6 @@ export default function Files({ isSharedSession = false, visitorId }: FilesProps
           </>
         )}
       </main>
-
       {selected && (
         <>
           <FileShareDialog

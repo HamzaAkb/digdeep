@@ -1,61 +1,59 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { findUserByEmail, shareSessionWithUser } from '@/lib/api'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import api from '@/lib/api'
+import { Loader2 } from 'lucide-react'
 
 interface SessionShareDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   sessionId: string
-  onShare: (sessionId: string, email: string) => void
 }
 
 export function SessionShareDialog({
   open,
   onOpenChange,
   sessionId,
-  onShare,
 }: SessionShareDialogProps) {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
 
-  const handleShare = async () => {
-    if (!email) return
+  const mutation = useMutation({
+    mutationFn: async (userEmail: string) => {
+      const userResponse = await findUserByEmail(userEmail)
+      if (!userResponse || !userResponse.id) {
+        throw new Error('User with that email address not found.')
+      }
+      const userId = userResponse.id
 
-    setLoading(true)
-    try {
-      const userResponse = await api.get(
-        `/user/email/${encodeURIComponent(email)}`
-      )
-      const userId = userResponse.data.id
-
-      const shareResponse = await api.post(
-        `/session/${sessionId}/share/user/${userId}`
-      )
-
-      toast.success(shareResponse.data.message)
+      return shareSessionWithUser(sessionId, userId)
+    },
+    onSuccess: () => {
+      toast.success(`Session shared successfully with ${email}`)
       setEmail('')
       onOpenChange(false)
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.message ||
-          error.response?.data?.detail ||
-          error.message ||
-          'Failed to share session'
-      )
-    } finally {
-      setLoading(false)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to share session')
+    },
+  })
+
+  const handleShare = () => {
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address.')
+      return
     }
+    mutation.mutate(email)
   }
 
   return (
@@ -63,42 +61,37 @@ export function SessionShareDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Share Session</DialogTitle>
+          <DialogDescription>
+            Share this session with another user. They will have read-only
+            access.
+          </DialogDescription>
         </DialogHeader>
         <div className='space-y-4 py-4'>
           <div className='space-y-2'>
-            <Label htmlFor='email'>Email</Label>
+            <Label htmlFor='email'>User's Email Address</Label>
             <Input
               id='email'
               type='email'
-              placeholder='Enter email address'
+              placeholder='name@example.com'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
+              disabled={mutation.isPending}
             />
           </div>
         </div>
         <DialogFooter>
           <Button
             variant='outline'
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpenChange(false)
-            }}
-            disabled={loading}
+            onClick={() => onOpenChange(false)}
+            disabled={mutation.isPending}
           >
             Cancel
           </Button>
-          <Button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleShare()
-            }}
-            disabled={loading || !email}
-          >
-            {loading ? (
+          <Button onClick={handleShare} disabled={mutation.isPending || !email}>
+            {mutation.isPending ? (
               <>
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                Share
+                Sharing...
               </>
             ) : (
               'Share'

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useIsMutating } from '@tanstack/react-query'
 import {
@@ -6,18 +6,16 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
-import {
-  ChevronLeft,
-  Download,
-  Share2,
-  Mail,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from 'lucide-react'
+import { ChevronLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { ChatPanel } from '@/components/chat-panel'
 import { FileViewerPanel } from '@/components/file-viewer-panel'
 import { ToolsSidebar } from '@/components/tools-sidebar'
-import { fetchSessionById, streamTask, fetchFileContent } from '@/lib/api'
+import {
+  fetchSessionById,
+  streamTask,
+  streamReportTask,
+  fetchFileContent,
+} from '@/lib/api'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NotFound } from '@/components/not-found'
 import { parseStream, type ParsedBlock } from '@/lib/stream-parser'
@@ -117,6 +115,8 @@ function SessionComponent() {
   const [generatedGoals, setGeneratedGoals] = useState<Goal[]>([])
   const [activeTool, setActiveTool] = useState<ActiveTool>(null)
 
+  const abortControllerRef = useRef<AbortController | null>(null)
+
   const streamMutation = useMutation({
     mutationKey: ['streamTask', sessionId],
     mutationFn: async ({ task }: { task: string }) => {
@@ -124,22 +124,34 @@ function SessionComponent() {
         ...prev,
         { id: crypto.randomUUID(), type: 'user', content: task },
       ])
+
+      abortControllerRef.current = new AbortController()
+
       let buffer = ''
-      await streamTask(sessionId, task, (chunk) => {
-        buffer += chunk
-        const parsedEvents = parseStream(buffer)
-        if (parsedEvents.length > 0) {
-          const newMessages: Message[] = parsedEvents.map((p) => ({
-            id: crypto.randomUUID(),
-            type: 'bot',
-            parsed: p,
-          }))
-          setMessages((prev) => [...prev, ...newMessages])
-          buffer = ''
-        }
-      })
+      await streamTask(
+        sessionId,
+        task,
+        (chunk) => {
+          buffer += chunk
+          const parsedEvents = parseStream(buffer)
+          if (parsedEvents.length > 0) {
+            const newMessages: Message[] = parsedEvents.map((p) => ({
+              id: crypto.randomUUID(),
+              type: 'bot',
+              parsed: p,
+            }))
+            setMessages((prev) => [...prev, ...newMessages])
+            buffer = ''
+          }
+        },
+        abortControllerRef.current.signal
+      )
     },
     onError: (error) => {
+      if (error.name === 'AbortError') {
+        console.log('Stream aborted by user.')
+        return
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -149,11 +161,84 @@ function SessionComponent() {
         },
       ])
     },
+    onSettled: () => {
+      abortControllerRef.current = null
+    },
+  })
+
+  const reportStreamMutation = useMutation({
+    mutationKey: ['streamReportTask', sessionId],
+    mutationFn: async ({
+      task,
+      template,
+    }: {
+      task: string
+      template?: string
+    }) => {
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), type: 'user', content: task },
+      ])
+
+      abortControllerRef.current = new AbortController()
+
+      let buffer = ''
+      await streamReportTask(
+        sessionId,
+        task,
+        template,
+        (chunk) => {
+          buffer += chunk
+          const parsedEvents = parseStream(buffer)
+          if (parsedEvents.length > 0) {
+            const newMessages: Message[] = parsedEvents.map((p) => ({
+              id: crypto.randomUUID(),
+              type: 'bot',
+              parsed: p,
+            }))
+            setMessages((prev) => [...prev, ...newMessages])
+            buffer = ''
+          }
+        },
+        abortControllerRef.current.signal
+      )
+    },
+    onError: (error) => {
+      if (error.name === 'AbortError') {
+        console.log('Report stream aborted by user.')
+        return
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          type: 'bot',
+          text: `**Error:** ${error.message}`,
+        },
+      ])
+    },
+    onSettled: () => {
+      abortControllerRef.current = null
+    },
   })
 
   const handleRunTask = (task: string) => streamMutation.mutate({ task })
-  const isStreaming =
+  const handleSendReport = (task: string, template?: string) =>
+    reportStreamMutation.mutate({ task, template })
+
+  const handleCancelStream = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      toast.info('Streaming cancelled.')
+    }
+  }
+
+  const isTaskStreaming =
     useIsMutating({ mutationKey: ['streamTask', sessionId] }) > 0
+  const isReportStreaming =
+    useIsMutating({ mutationKey: ['streamReportTask', sessionId] }) > 0
+  const isStreaming = isTaskStreaming || isReportStreaming
+
   const handleToolSelect = (tool: NonNullable<ActiveTool>) =>
     setActiveTool((prev) => (prev === tool ? null : tool))
 
@@ -192,7 +277,6 @@ function SessionComponent() {
     <>
       <div className='h-screen w-screen flex flex-col overflow-hidden bg-background'>
         <header className='flex items-center h-14 px-4 shrink-0'>
-          {/* Left Section */}
           <div className='flex items-center gap-4 flex-1'>
             <Link
               to='/dashboard'
@@ -204,7 +288,6 @@ function SessionComponent() {
             <div className='font-semibold truncate text-lg'>{sessionName}</div>
           </div>
 
-          {/* Center Section */}
           <div className='flex justify-center'>
             <TooltipProvider>
               <Tooltip>
@@ -231,7 +314,6 @@ function SessionComponent() {
             </TooltipProvider>
           </div>
 
-          {/* Right Section */}
           <div className='flex items-center justify-end gap-2 flex-1'>
             <Button
               variant='outline'
@@ -240,7 +322,6 @@ function SessionComponent() {
               aria-label='Email file'
               disabled={!selectedFile}
             >
-              {/* <Mail size={16} className='mr-2' /> */}
               Email
             </Button>
             <Button
@@ -250,7 +331,6 @@ function SessionComponent() {
               aria-label='Share file'
               disabled={!selectedFile}
             >
-              {/* <Share2 size={16} className='mr-2' /> */}
               Share
             </Button>
             <Button
@@ -259,7 +339,6 @@ function SessionComponent() {
               aria-label='Download file'
               disabled={!selectedFile}
             >
-              {/* <Download size={16} className='mr-2' /> */}
               Download
             </Button>
           </div>
@@ -277,7 +356,9 @@ function SessionComponent() {
                   <ChatPanel
                     messages={messages}
                     onSendMessage={handleRunTask}
+                    onSendReportMessage={handleSendReport}
                     isStreaming={isStreaming}
+                    onCancelStream={handleCancelStream}
                   />
                 </ResizablePanel>
                 <ResizableHandle withHandle className='my-4' />

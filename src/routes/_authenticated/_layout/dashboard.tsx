@@ -1,5 +1,3 @@
-
-
 import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
@@ -177,7 +175,7 @@ function DashboardComponent() {
                 variant='outline'
               >
                 {isFetchingNextPage ? (
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 className='h-4 w-4 animate-spin' />
                 ) : null}
                 {isFetchingNextPage ? 'Loading...' : 'Load More Sessions'}
               </Button>
@@ -186,9 +184,6 @@ function DashboardComponent() {
         </main>
       </div>
 
-      {/* --- RENDER ALL DIALOGS (DECOUPLED FROM THE CARDS) --- */}
-
-      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={!!sessionToDelete}
         onOpenChange={(isOpen) => !isOpen && setSessionToDelete(null)}
@@ -217,7 +212,6 @@ function DashboardComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Duplicate Session Dialog */}
       {sessionToDuplicate && (
         <DuplicateSessionDialog
           sessionId={sessionToDuplicate.session_id}
@@ -227,7 +221,6 @@ function DashboardComponent() {
         />
       )}
 
-      {/* Share with User Dialog */}
       {sessionToShare && (
         <SessionShareDialog
           sessionId={sessionToShare.session_id}
@@ -236,7 +229,6 @@ function DashboardComponent() {
         />
       )}
 
-      {/* Public Share Dialog */}
       {sessionToPublicShare && (
         <PublicShareDialog
           sessionId={sessionToPublicShare.session_id}

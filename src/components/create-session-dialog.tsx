@@ -194,7 +194,8 @@ export function CreateSessionDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <PlusCircle className='mr-2 h-4 w-4' /> Create Session
+          {/* <PlusCircle className='mr-2 h-4 w-4' />  */}
+          Create Session
         </Button>
       </DialogTrigger>
       <DialogContent className='max-w-2xl'>

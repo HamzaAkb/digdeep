@@ -26,8 +26,8 @@ function RootComponent() {
 
         <Toaster richColors />
 
-        <ReactQueryDevtools />
-        <TanStackRouterDevtools />
+        {/* <ReactQueryDevtools />
+        <TanStackRouterDevtools /> */}
       </ThemeProvider>
     </QueryClientProvider>
   )

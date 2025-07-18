@@ -240,7 +240,7 @@ function SessionComponent() {
               aria-label='Email file'
               disabled={!selectedFile}
             >
-              <Mail size={16} className='mr-2' />
+              {/* <Mail size={16} className='mr-2' /> */}
               Email
             </Button>
             <Button
@@ -250,7 +250,7 @@ function SessionComponent() {
               aria-label='Share file'
               disabled={!selectedFile}
             >
-              <Share2 size={16} className='mr-2' />
+              {/* <Share2 size={16} className='mr-2' /> */}
               Share
             </Button>
             <Button
@@ -259,7 +259,7 @@ function SessionComponent() {
               aria-label='Download file'
               disabled={!selectedFile}
             >
-              <Download size={16} className='mr-2' />
+              {/* <Download size={16} className='mr-2' /> */}
               Download
             </Button>
           </div>
@@ -298,7 +298,7 @@ function SessionComponent() {
 
             {activeTool && (
               <>
-                <ResizableHandle withHandle className='my-3'/>
+                <ResizableHandle withHandle className='my-3' />
                 <ResizablePanel defaultSize={30} minSize={20}>
                   <ToolsPanel
                     sessionId={sessionId}

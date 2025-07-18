@@ -3,11 +3,11 @@ import { SendHorizontal, StopCircle } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from './ui/scroll-area'
-import ReactMarkdown from 'react-markdown'
 import type { Message } from '@/routes/_authenticated/sessions/$sessionId'
 import { TemplateDialog } from './template-dialog'
 import { ThinkingProcess } from './thinking-process'
 import type { ParsedBlock } from '@/lib/stream-parser'
+import { MarkdownFormatter } from './markdown-formatter'
 
 type RenderableItem =
   | { type: 'user'; id: string; content: string }
@@ -139,7 +139,7 @@ export function ChatPanel({
                   <div key={item.id} className='flex justify-end'>
                     <div className='max-w-[80%] rounded-lg px-4 py-2 bg-primary text-primary-foreground'>
                       <div className='prose prose-sm dark:prose-invert max-w-none prose-p:my-0'>
-                        <ReactMarkdown>{item.content}</ReactMarkdown>
+                        <MarkdownFormatter textContent={item.content} />
                       </div>
                     </div>
                   </div>
@@ -149,7 +149,7 @@ export function ChatPanel({
                 return (
                   <div key={item.id}>
                     <div className='text-sm prose prose-sm dark:prose-invert max-w-none'>
-                      <ReactMarkdown>{item.text}</ReactMarkdown>
+                      <MarkdownFormatter textContent={item.text || ''} />
                     </div>
                   </div>
                 )
@@ -165,7 +165,7 @@ export function ChatPanel({
                     )}
                     {item.finalAnswer && (
                       <div className='text-sm prose prose-sm dark:prose-invert max-w-none mt-2'>
-                        <ReactMarkdown>{item.finalAnswer}</ReactMarkdown>
+                        <MarkdownFormatter textContent={item.finalAnswer} />
                       </div>
                     )}
                   </div>

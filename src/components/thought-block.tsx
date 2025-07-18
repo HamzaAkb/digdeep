@@ -1,5 +1,5 @@
-import ReactMarkdown from 'react-markdown'
 import type { ParsedBlock } from '@/lib/stream-parser'
+import { MarkdownFormatter } from './markdown-formatter'
 
 const ICONS: Record<string, string> = {
   started: '🚀',
@@ -28,7 +28,7 @@ export function ThoughtBlock({ parsed }: { parsed: ParsedBlock }) {
           </div>
           <div className='text-sm ml-4 mt-1 whitespace-pre-wrap'>
             <div className='prose prose-sm dark:prose-invert max-w-none'>
-              <ReactMarkdown>{b.content}</ReactMarkdown>
+              <MarkdownFormatter textContent={b.content} />
             </div>
           </div>
         </div>

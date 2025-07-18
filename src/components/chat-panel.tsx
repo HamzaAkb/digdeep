@@ -1,12 +1,23 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { SendHorizontal, StopCircle } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import ReactMarkdown from 'react-markdown'
 import type { Message } from '@/routes/_authenticated/sessions/$sessionId'
-import { FormattedBotResponse } from './formatted-bot-response'
 import { TemplateDialog } from './template-dialog'
+import { ThinkingProcess } from './thinking-process'
+import type { ParsedBlock } from '@/lib/stream-parser'
+
+type RenderableItem =
+  | { type: 'user'; id: string; content: string }
+  | { type: 'bot-simple'; id: string; text?: string }
+  | {
+      type: 'bot-complex'
+      id: string
+      thoughts: ParsedBlock[]
+      finalAnswer?: string
+    }
 
 interface ChatPanelProps {
   messages: Message[]
@@ -25,7 +36,6 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
   const [reportChecked, setReportChecked] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
   const [reportHtmlTemplate, setReportHtmlTemplate] = useState<string | null>(
@@ -35,13 +45,11 @@ export function ChatPanel({
   const handleSubmit = () => {
     const trimmedInput = input.trim()
     if (!trimmedInput || isStreaming) return
-
     if (reportChecked) {
       onSendReportMessage(trimmedInput, reportHtmlTemplate || undefined)
     } else {
       onSendMessage(trimmedInput)
     }
-
     setInput('')
   }
 
@@ -50,6 +58,74 @@ export function ChatPanel({
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
     return () => clearTimeout(timer)
+  }, [messages, isStreaming])
+
+  const groupedMessages = useMemo((): RenderableItem[] => {
+    const items: RenderableItem[] = []
+    let currentThoughtGroup: ParsedBlock[] | null = null
+
+    const finalizeThoughtGroup = (finalAnswer?: string) => {
+      if (currentThoughtGroup && currentThoughtGroup.length > 0) {
+        items.push({
+          type: 'bot-complex',
+          id: `thought-group-${items.length}`,
+          thoughts: currentThoughtGroup,
+          finalAnswer,
+        })
+      } else if (finalAnswer) {
+        items.push({
+          type: 'bot-complex',
+          id: `thought-group-${items.length}`,
+          thoughts: [],
+          finalAnswer,
+        })
+      }
+      currentThoughtGroup = null
+    }
+
+    for (const msg of messages) {
+      if (msg.type === 'user') {
+        finalizeThoughtGroup()
+        items.push({ type: 'user', content: msg.content, id: msg.id })
+      } else if (msg.type === 'bot') {
+        if (!msg.parsed) {
+          finalizeThoughtGroup()
+          items.push({ type: 'bot-simple', text: msg.text, id: msg.id })
+        } else {
+          if (!currentThoughtGroup) {
+            currentThoughtGroup = []
+          }
+
+          const finalAnswerBlock = msg.parsed.blocks.find((b) =>
+            b.content.trim().startsWith('[Final Answer]:')
+          )
+
+          if (finalAnswerBlock) {
+            const finalAnswer = finalAnswerBlock.content
+              .replace(/\[Final Answer\]:\s*/i, '')
+              .trim()
+
+            const otherBlocks = msg.parsed.blocks.filter(
+              (b) => !b.content.trim().startsWith('[Final Answer]:')
+            )
+
+            if (otherBlocks.length > 0) {
+              currentThoughtGroup.push({ ...msg.parsed, blocks: otherBlocks })
+            }
+
+            finalizeThoughtGroup(finalAnswer)
+          } else {
+            currentThoughtGroup.push(msg.parsed)
+          }
+        }
+      }
+    }
+
+    if (currentThoughtGroup) {
+      finalizeThoughtGroup()
+    }
+
+    return items
   }, [messages])
 
   return (
@@ -57,36 +133,60 @@ export function ChatPanel({
       <div className='relative h-full w-full'>
         <ScrollArea className='absolute top-0 left-0 h-full w-full'>
           <div className='space-y-6 p-4 pb-40'>
-            {messages.map((msg) => (
-              <div key={msg.id}>
-                {msg.type === 'user' ? (
-                  <div className='flex justify-end'>
+            {groupedMessages.map((item) => {
+              if (item.type === 'user') {
+                return (
+                  <div key={item.id} className='flex justify-end'>
                     <div className='max-w-[80%] rounded-lg px-4 py-2 bg-primary text-primary-foreground'>
                       <div className='prose prose-sm dark:prose-invert max-w-none prose-p:my-0'>
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        <ReactMarkdown>{item.content}</ReactMarkdown>
                       </div>
                     </div>
                   </div>
-                ) : msg.parsed ? (
-                  <FormattedBotResponse parsed={msg.parsed} />
-                ) : (
-                  <div className='text-sm prose prose-sm dark:prose-invert max-w-none'>
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                )
+              }
+              if (item.type === 'bot-simple') {
+                return (
+                  <div key={item.id}>
+                    <div className='text-sm prose prose-sm dark:prose-invert max-w-none'>
+                      <ReactMarkdown>{item.text}</ReactMarkdown>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
-            {isStreaming && (
-              <div className='p-3 bg-background/50 border rounded-md animate-pulse'>
-                <p className='text-sm text-muted-foreground'>
-                  Agent is thinking...
-                </p>
-              </div>
-            )}
+                )
+              }
+              if (item.type === 'bot-complex') {
+                return (
+                  <div key={item.id}>
+                    {item.thoughts.length > 0 && (
+                      <ThinkingProcess
+                        thoughts={item.thoughts}
+                        isStreaming={isStreaming && !item.finalAnswer}
+                      />
+                    )}
+                    {item.finalAnswer && (
+                      <div className='text-sm prose prose-sm dark:prose-invert max-w-none mt-2'>
+                        <ReactMarkdown>{item.finalAnswer}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+              return null
+            })}
+            {isStreaming &&
+              !groupedMessages.some(
+                (item) =>
+                  item.type === 'bot-complex' || item.type === 'bot-simple'
+              ) && (
+                <div className='p-3 bg-background/50 border rounded-md animate-pulse'>
+                  <p className='text-sm text-muted-foreground'>
+                    Agent is thinking...
+                  </p>
+                </div>
+              )}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
-
         <div className='absolute bottom-0 left-0 w-full bg-background p-4'>
           <div className='relative flex items-end'>
             <Textarea
@@ -106,37 +206,32 @@ export function ChatPanel({
               }}
               disabled={isStreaming}
             />
-
             <div className='absolute bottom-3 left-3 flex items-center gap-2'>
               <Button
                 type='button'
                 variant='ghost'
                 aria-pressed={reportChecked}
                 onClick={() => setReportChecked((v) => !v)}
-                className={`h-auto gap-1 rounded px-2 py-1 text-xs font-medium
+                className={`h-auto rounded px-2 py-1 text-xs font-medium
                   ${
                     reportChecked
                       ? 'border border-blue-600 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-900 dark:bg-blue-800 dark:text-blue-300 dark:hover:bg-blue-700'
                       : 'border border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }`}
               >
-                {/* <Bookmark className='h-4 w-4' /> */}
                 <span className='px-1'>Report</span>
               </Button>
-
               {reportChecked && (
                 <Button
                   type='button'
                   variant='ghost'
                   onClick={() => setTemplateOpen(true)}
-                  className='h-auto gap-1 rounded border border-transparent bg-muted px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  className='h-auto rounded border border-transparent bg-muted px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 >
-                  {/* <FileText className='h-4 w-4' /> */}
                   <span className='px-1'>Templates</span>
                 </Button>
               )}
             </div>
-
             <div className='absolute bottom-3 right-3'>
               {isStreaming ? (
                 <StopCircle
@@ -153,7 +248,6 @@ export function ChatPanel({
           </div>
         </div>
       </div>
-
       <TemplateDialog
         open={templateOpen}
         onOpenChange={setTemplateOpen}

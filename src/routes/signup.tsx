@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signupUser } from '@/lib/api'
+import { Separator } from '@/components/ui/separator'
 
 export const Route = createFileRoute('/signup')({
   component: SignupComponent,
@@ -62,7 +63,7 @@ function SignupComponent() {
               Enter your details to create a new account.
             </CardDescription>
           </CardHeader>
-          <CardContent className='grid gap-4'>
+          <CardContent className='grid gap-4 my-6'>
             <form.Field
               name='name'
               validators={{
@@ -70,7 +71,7 @@ function SignupComponent() {
                   !value ? 'Name is required' : undefined,
               }}
               children={(field) => (
-                <div className='grid gap-2'>
+                <div className='grid'>
                   <Label htmlFor={field.name}>Full Name</Label>
                   <Input
                     id={field.name}
@@ -95,7 +96,7 @@ function SignupComponent() {
                   !value ? 'Username is required' : undefined,
               }}
               children={(field) => (
-                <div className='grid gap-2'>
+                <div className='grid'>
                   <Label htmlFor={field.name}>Username</Label>
                   <Input
                     id={field.name}
@@ -130,7 +131,7 @@ function SignupComponent() {
                 },
               }}
               children={(field) => (
-                <div className='grid gap-2'>
+                <div className='grid'>
                   <Label htmlFor={field.name}>Email</Label>
                   <Input
                     id={field.name}
@@ -156,7 +157,7 @@ function SignupComponent() {
                   !value ? 'Password is required' : undefined,
               }}
               children={(field) => (
-                <div className='grid gap-2'>
+                <div className='grid'>
                   <Label htmlFor={field.name}>Password</Label>
                   <Input
                     id={field.name}
@@ -180,6 +181,7 @@ function SignupComponent() {
               {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
               Create Account
             </Button>
+            <Separator className='mt-2' />
             <Button
               variant='link'
               type='button'

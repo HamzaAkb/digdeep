@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { loginUser } from '@/lib/api'
+import { Separator } from '@/components/ui/separator'
 
 export const Route = createFileRoute('/')({
   component: LoginComponent,
@@ -71,7 +72,7 @@ function LoginComponent() {
               Enter your username below to login to your account.
             </CardDescription>
           </CardHeader>
-          <CardContent className='grid gap-4'>
+          <CardContent className='grid gap-4 my-6'>
             <form.Field
               name='username'
               validators={{
@@ -79,7 +80,7 @@ function LoginComponent() {
                   !value ? 'Username is required' : undefined,
               }}
               children={(field) => (
-                <div className='grid gap-2'>
+                <div className='grid'>
                   <Label htmlFor={field.name}>Username</Label>
                   <Input
                     id={field.name}
@@ -104,7 +105,7 @@ function LoginComponent() {
                   !value ? 'Password is required' : undefined,
               }}
               children={(field) => (
-                <div className='grid gap-2'>
+                <div className='grid'>
                   <Label htmlFor={field.name}>Password</Label>
                   <Input
                     id={field.name}
@@ -125,9 +126,10 @@ function LoginComponent() {
           </CardContent>
           <CardFooter className='flex flex-col gap-4'>
             <Button type='submit' className='w-full' disabled={isPending}>
-              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              {isPending && <Loader2 className='h-4 w-4 animate-spin' />}
               Sign in
             </Button>
+            <Separator className='mt-2' />
             <Button
               variant='link'
               type='button'

@@ -85,7 +85,7 @@ export const fetchSessions = async ({
 }: {
     pageParam?: number
 }): Promise<SessionsPage> => {
-    return apiFetch(`/session/user/sessions?page=${pageParam}&items_per_page=8`)
+    return apiFetch(`/session/user/sessions?page=${pageParam}&items_per_page=20`)
 }
 
 export const startSession = (data: {

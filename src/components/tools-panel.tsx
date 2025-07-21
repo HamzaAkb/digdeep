@@ -11,9 +11,10 @@ interface ToolsPanelProps {
   sessionId: string
   activeTool: NonNullable<ActiveTool>
   onClose: () => void
-  onRunTask: (task: string) => void
+  onRunTask: (task: string) => Promise<void>
   generatedGoals: GoalType[]
   onSetGeneratedGoals: (goals: GoalType[]) => void
+  onCancelExecution: () => void
 }
 
 const toolConfig = {
@@ -44,8 +45,8 @@ export function ToolsPanel({
   }
 
   return (
-    <div className='h-full flex flex-col border ml-2 rounded-2xl'>
-      <header className='flex items-center justify-between p-4 border-b shrink-0'>
+    <div className='h-full flex flex-col ml-2 rounded-2xl'>
+      <header className='flex items-center justify-between px-4 py-2 border-b shrink-0'>
         <div className='flex items-center gap-2 font-semibold'>
           <Icon className='h-5 w-5' />
           <span>{title}</span>

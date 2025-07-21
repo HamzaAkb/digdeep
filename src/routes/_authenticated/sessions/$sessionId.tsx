@@ -222,7 +222,10 @@ function SessionComponent() {
     },
   })
 
-  const handleRunTask = (task: string) => streamMutation.mutate({ task })
+  const handleRunTask = async (task: string) => {
+    await streamMutation.mutateAsync({ task })
+  }
+  
   const handleSendReport = (task: string, template?: string) =>
     reportStreamMutation.mutate({ task, template })
 
@@ -266,7 +269,9 @@ function SessionComponent() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       toast.error(
-        `Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to download file: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       )
     }
   }
@@ -388,6 +393,7 @@ function SessionComponent() {
                     onRunTask={handleRunTask}
                     generatedGoals={generatedGoals}
                     onSetGeneratedGoals={setGeneratedGoals}
+                    onCancelExecution={handleCancelStream}
                   />
                 </ResizablePanel>
               </>

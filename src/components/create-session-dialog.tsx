@@ -150,7 +150,7 @@ export function CreateSessionDialog() {
         setFormQuestions(
           questions.map((q) => ({
             ...q,
-            answers: Array(q.questions.length).fill(''),
+            answers: q.answers || Array(q.questions.length).fill(''),
           }))
         )
         setStep('clarification')

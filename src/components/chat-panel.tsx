@@ -184,6 +184,14 @@ export function ChatPanel({
                   </p>
                 </div>
               )}
+            {isStreaming && (
+              <div className='max-w-[95%] animate-pulse'>
+                <div className='rounded-3xl px-4 space-y-2'>
+                  <div className='h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4' />
+                  <div className='h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2' />
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>

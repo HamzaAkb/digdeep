@@ -90,20 +90,24 @@ export function GoalsPanel({
     })
     setExecutionStatus((prev) => ({ ...prev, ...initialStatus }))
 
-    for (let i = 0; i < goalsToRun.length; i++) {
-      const goalIndex = goalsToRun[i]
-      setCurrentRunIndex(i + 1)
+    try {
+      for (let i = 0; i < goalsToRun.length; i++) {
+        const goalIndex = goalsToRun[i]
+        setCurrentRunIndex(i + 1)
 
-      if (stopExecutionRef.current) {
-        toast.info('Execution stopped by user.')
-        break
+        if (stopExecutionRef.current) {
+          toast.info('Execution stopped by user.')
+          break
+        }
+        await runSingleGoal(goalIndex)
       }
-
-      await runSingleGoal(goalIndex)
+    } catch (error) {
+      console.error('Batch execution halted:', error)
+    } finally {
+      setIsExecuting(false)
+      setSelectedGoals(new Set())
+      setRunQueue([])
     }
-    setIsExecuting(false)
-    setSelectedGoals(new Set())
-    setRunQueue([])
   }
 
   const runSingleGoal = async (index: number) => {
@@ -131,7 +135,7 @@ export function GoalsPanel({
     try {
       await runSingleGoal(index)
     } catch (error) {
-      console.error('Individual goal run failed', error)
+      console.error('Individual goal run failed:', error)
     } finally {
       setIsExecuting(false)
     }
@@ -186,7 +190,7 @@ export function GoalsPanel({
                 onClick={handleStopExecution}
                 className='w-full'
               >
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className='h-4 w-4 animate-spin' />
                 Stop Execution
               </Button>
             ) : (
@@ -255,7 +259,7 @@ export function GoalsPanel({
                       )}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className='pb-4 space-y-4 pl-6'>
+                  <AccordionContent className='pt-2 pb-4 space-y-4 pl-7'>
                     <p className='text-sm text-muted-foreground'>
                       {g.description}
                     </p>

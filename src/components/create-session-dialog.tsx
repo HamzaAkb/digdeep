@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Loader2, PlusCircle, Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { useForm } from '@tanstack/react-form'
 import {
@@ -198,7 +198,7 @@ export function CreateSessionDialog() {
           Create Session
         </Button>
       </DialogTrigger>
-      <DialogContent className='max-w-2xl'>
+      <DialogContent className='max-w-2xl flex flex-col'>
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -217,7 +217,7 @@ export function CreateSessionDialog() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className='max-h-[60vh] my-4 pr-6'>
+          <ScrollArea className='max-h-[70vh] my-4 overflow-auto'>
             {step === 'setup' ? (
               <div className='space-y-6'>
                 <form.Field

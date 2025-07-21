@@ -30,11 +30,13 @@ export function ClarificationStep({ formQuestions, onAnswerChange }: Props) {
   }, {})
 
   return (
-    <div className='space-y-6 pb-6'>
+    <div className='space-y-6'>
       {Object.entries(groupedBySource).map(([source, blocks]) => (
         <section key={source} className='space-y-4'>
-          <p className='font-semibold text-lg border-b pb-2'>
-            Questions for: <strong>{source}</strong>
+          <p className='font-semibold text-lg border-b pb-2 break-words'>
+            <p className='font-semibold text-lg pb-2 break-words'>
+              Questions for: <strong className='break-all'>{source}</strong>
+            </p>
           </p>
           {blocks.map(({ blockIndex, block }) =>
             block.questions.map((question, questionIndex) => (

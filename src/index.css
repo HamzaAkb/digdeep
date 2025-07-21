@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 body {
   font-family: 'Geist';
@@ -124,12 +124,22 @@ body {
   }
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: gray;
+  background-color: var(--border);
   border-radius: 10px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ring);
 }

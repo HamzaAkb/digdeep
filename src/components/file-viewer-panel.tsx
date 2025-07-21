@@ -1,27 +1,67 @@
-
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getGroupedRowModel,
+  getExpandedRowModel,
+  flexRender,
+  ColumnDef,
+  SortingState,
+  VisibilityState,
+  GroupingState,
+  ExpandedState,
+  CellContext,
+  ColumnSizingState,
+} from '@tanstack/react-table'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable'
 import { Skeleton } from './ui/skeleton'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   List,
   File,
   FileText,
   FileJson,
   FileCode,
-  Image as ImageIcon,
+  ImageIcon,
   Sheet,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
+  ChevronRight,
+  ListTree,
 } from 'lucide-react'
 import { apiFetch, fetchFileContent } from '@/lib/api'
 import Papa from 'papaparse'
-import { FixedSizeGrid as Grid } from 'react-window'
-import AutoSizer from 'react-virtualized-auto-sizer'
 import { MarkdownFormatter } from './markdown-formatter'
+
+const measureTextWidth = (text: string, font: string): number => {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (!context) return 0
+  context.font = font
+  return context.measureText(text).width
+}
+
+const isNumeric = (value: any): boolean => {
+  if (typeof value === 'number') return true
+  if (typeof value !== 'string') return false
+  return !isNaN(parseFloat(value)) && isFinite(Number(value))
+}
 
 interface FileMeta {
   name: string
@@ -85,7 +125,17 @@ export function FileViewerPanel({
 }: FileViewerPanelProps) {
   const [textContent, setTextContent] = useState<string>('')
   const [imageUrl, setImageUrl] = useState<string>('')
-  const [csvData, setCsvData] = useState<string[][]>([])
+  const [tableData, setTableData] = useState<Record<string, any>[]>([])
+  const [tableColumns, setTableColumns] = useState<
+    ColumnDef<Record<string, any>>[]
+  >([])
+
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [grouping, setGrouping] = useState<GroupingState>([])
+  const [expanded, setExpanded] = useState<ExpandedState>({})
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({})
 
   const queryKey = shareToken
     ? ['files', shareToken, visitorId]
@@ -104,7 +154,9 @@ export function FileViewerPanel({
       if (!selectedFile) return null
       setImageUrl('')
       setTextContent('')
-      setCsvData([])
+      setTableData([])
+      setTableColumns([])
+      setColumnSizing({})
 
       const res = await fetchFileContent(
         sessionId,
@@ -124,8 +176,58 @@ export function FileViewerPanel({
       } else if (fileExtension === 'csv') {
         const text = await res.text()
         Papa.parse(text, {
-          complete: (results) => setCsvData(results.data as string[][]),
+          header: true,
           skipEmptyLines: true,
+          complete: (results) => {
+            const data = results.data as Record<string, any>[]
+            const headers = (results.meta.fields as string[]) || []
+
+            const newColumnSizing: ColumnSizingState = {}
+            const sample = data.slice(0, 50)
+            const PADDING = 80
+
+            headers.forEach((header: string) => {
+              const headerWidth = measureTextWidth(
+                header,
+                'bold 14px sans-serif'
+              )
+              const maxCellWidth = Math.max(
+                ...sample.map((row) =>
+                  measureTextWidth(row[header] || '', '14px sans-serif')
+                )
+              )
+              newColumnSizing[header] = Math.max(
+                120,
+                Math.min(500, Math.max(headerWidth, maxCellWidth) + PADDING)
+              )
+            })
+
+            const columns: ColumnDef<Record<string, any>>[] = headers.map(
+              (header: string) => ({
+                accessorKey: header,
+                header: header,
+                size: newColumnSizing[header],
+                cell: (info: CellContext<Record<string, any>, any>) =>
+                  info.getValue(),
+                aggregationFn: isNumeric(data[0]?.[header]) ? 'sum' : undefined,
+                aggregatedCell: (
+                  info: CellContext<Record<string, any>, any>
+                ) => {
+                  const value = info.getValue()
+                  if (typeof value !== 'number') return null
+                  return (
+                    <div className='text-right font-bold pr-2'>
+                      {value.toLocaleString()}
+                    </div>
+                  )
+                },
+              })
+            )
+
+            setColumnSizing(newColumnSizing)
+            setTableColumns(columns)
+            setTableData(data)
+          },
         })
       } else {
         setTextContent(await res.text())
@@ -150,6 +252,42 @@ export function FileViewerPanel({
       if (imageUrl) URL.revokeObjectURL(imageUrl)
     }
   }, [imageUrl])
+
+  const table = useReactTable({
+    data: tableData,
+    columns: tableColumns,
+    columnResizeMode: 'onChange',
+    state: {
+      sorting,
+      globalFilter,
+      columnVisibility,
+      grouping,
+      expanded,
+      columnSizing,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    onGroupingChange: setGrouping,
+    onExpandedChange: setExpanded,
+    onColumnSizingChange: setColumnSizing,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+  })
+
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  const { rows } = table.getRowModel()
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 36,
+    overscan: 10,
+  })
+  const virtualRows = rowVirtualizer.getVirtualItems()
+  const totalSize = rowVirtualizer.getTotalSize()
 
   const renderContent = () => {
     if (fileContentQuery.isPending) {
@@ -177,57 +315,169 @@ export function FileViewerPanel({
         </div>
       )
 
-    if (csvData.length > 0) {
-      const columnCount = csvData[0]?.length ?? 0
-      const rowCount = Math.max(csvData.length - 1, 0)
+    if (tableData.length > 0) {
       return (
-        <div className='h-full w-full'>
-          <AutoSizer>
-            {({ height, width }) => {
-              const colWidth =
-                columnCount > 0
-                  ? Math.max(150, Math.floor(width / columnCount))
-                  : 150
-              const Cell = ({ columnIndex, rowIndex, style }: any) => (
-                <div
-                  className='box-border p-2 truncate border-r border-b border-border text-sm'
-                  style={style}
-                >
-                  {csvData[rowIndex + 1]?.[columnIndex] ?? ''}
-                </div>
-              )
-              return (
-                <div>
-                  <div
-                    className='grid font-semibold bg-muted'
-                    style={{
-                      gridTemplateColumns: `repeat(${columnCount}, ${colWidth}px)`,
-                    }}
-                  >
-                    {csvData[0].map((header, j) => (
-                      <div
-                        key={j}
-                        className='box-border p-2 truncate text-sm font-bold border-r border-b border-border'
-                        style={{ height: 36 }}
+        <div className='h-full w-full flex flex-col p-4 gap-4'>
+          <div className='flex items-center gap-2'>
+            <Input
+              placeholder='Search all columns...'
+              value={globalFilter ?? ''}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className='max-w-sm'
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='outline' className='ml-auto'>
+                  Columns <ChevronDown className='ml-2 h-4 w-4' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                {table
+                  .getAllLeafColumns()
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className='capitalize'
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {grouping.length > 0 && (
+              <Button variant='ghost' onClick={() => setGrouping([])}>
+                Clear Grouping
+              </Button>
+            )}
+          </div>
+
+          <div
+            ref={tableContainerRef}
+            className='flex-1 overflow-auto rounded-md border'
+          >
+            <table className='grid text-sm' style={{ tableLayout: 'fixed' }}>
+              <thead className='grid sticky top-0 bg-muted z-10'>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id} className='flex w-full'>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className='flex items-center p-2 text-left font-bold border-b border-r border-border'
+                        style={{ width: header.getSize() }}
                       >
-                        {header}
-                      </div>
+                        {header.isPlaceholder ? null : (
+                          <div className='flex items-center justify-between w-full'>
+                            <div
+                              className={`flex items-center gap-2 min-w-0 mr-2 ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {header.column.getCanSort() &&
+                                ({
+                                  asc: <ChevronUp className='h-4 w-4' />,
+                                  desc: (
+                                    <ChevronDown className='h-4 w-4' />
+                                  ),
+                                }[header.column.getIsSorted() as string] ?? (
+                                  <ChevronsUpDown className='h-4 w-4 opacity-30 shrink-0' />
+                                ))}
+                              <span className='whitespace-nowrap'>
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                              </span>
+                            </div>
+                            {header.column.getCanGroup() && (
+                              <Button
+                                size='sm'
+                                variant={
+                                  header.column.getIsGrouped()
+                                    ? 'secondary'
+                                    : 'ghost'
+                                }
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  header.column.toggleGrouping()
+                                }}
+                                className='h-6 w-6 p-1 shrink-0'
+                                title='Group by this column'
+                              >
+                                <ListTree className='h-4 w-4' />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </th>
                     ))}
-                  </div>
-                  <Grid
-                    columnCount={columnCount}
-                    columnWidth={colWidth}
-                    height={height - 36}
-                    width={width}
-                    rowCount={rowCount}
-                    rowHeight={36}
-                  >
-                    {Cell}
-                  </Grid>
-                </div>
-              )
-            }}
-          </AutoSizer>
+                  </tr>
+                ))}
+              </thead>
+              <tbody
+                className='grid relative'
+                style={{ height: `${totalSize}px` }}
+              >
+                {virtualRows.map((virtualRow) => {
+                  const row = rows[virtualRow.index]
+                  return (
+                    <tr
+                      key={row.id}
+                      className='flex w-full absolute'
+                      style={{
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className='flex items-center p-2 border-b border-r border-border/50'
+                          style={{ width: cell.column.getSize() }}
+                        >
+                          {cell.getIsGrouped() ? (
+                            <button
+                              className='flex items-center w-full min-w-0 gap-1 font-bold text-left'
+                              onClick={row.getToggleExpandedHandler()}
+                            >
+                              {row.getIsExpanded() ? (
+                                <ChevronDown className='shrink-0' />
+                              ) : (
+                                <ChevronRight className='shrink-0' />
+                              )}
+                              <span className='truncate'>
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </span>
+                              <span className='ml-auto shrink-0'>
+                                ({row.subRows.length})
+                              </span>
+                            </button>
+                          ) : cell.getIsAggregated() ? (
+                            flexRender(
+                              cell.column.columnDef.aggregatedCell ?? null,
+                              cell.getContext()
+                            )
+                          ) : (
+                            <span className='truncate'>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )
     }

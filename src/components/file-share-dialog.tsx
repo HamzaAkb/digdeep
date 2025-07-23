@@ -46,6 +46,10 @@ const shareFile = (data: {
   )
 }
 
+interface ShareFileResponse {
+  share_token: string
+}
+
 export function FileShareDialog({
   open,
   onOpenChange,
@@ -56,9 +60,9 @@ export function FileShareDialog({
   const [expiresIn, setExpiresIn] = useState('10')
   const [strategy, setStrategy] = useState('reuse')
 
-  const mutation = useMutation({
+  const mutation = useMutation<ShareFileResponse, Error, Parameters<typeof shareFile>[0]>({  
     mutationFn: shareFile,
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       const shareUrl = `${window.location.origin}/downloads/${data.share_token}`
       navigator.clipboard.writeText(shareUrl)
       toast.success('Link copied to clipboard!')

@@ -44,7 +44,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
         let errorData
         try {
             errorData = await response.json()
-        } catch (e) {
+        } catch {
             errorData = { message: response.statusText }
         }
         const message =
@@ -75,7 +75,7 @@ export const loginUser = (formData: URLSearchParams) =>
         body: formData,
     })
 
-export const signupUser = (data: any) =>
+export const signupUser = (data: Record<string, unknown>) =>
     apiFetch('/signup', { method: 'POST', body: JSON.stringify(data) })
 
 export const verifyEmail = (token: string) => apiFetch(`/verify-email/${token}`)

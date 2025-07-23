@@ -14,7 +14,7 @@ export const auth = {
     return user ? JSON.parse(user) : null
   },
 
-  setUser: (user: any) => {
+  setUser: (user: Record<string, unknown>) => {
     localStorage.setItem('user_details', JSON.stringify(user))
   },
 
@@ -28,7 +28,7 @@ interface AuthContext {
   auth: typeof auth
 }
 
-export const authGuard = ({ context, location }: { context: AuthContext; location: any }) => {
+export const authGuard = ({ context, location }: { context: AuthContext; location: Location }) => {
   if (!context.auth.isAuthenticated()) {
     throw redirect({
       to: '/',

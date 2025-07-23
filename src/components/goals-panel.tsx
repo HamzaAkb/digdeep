@@ -45,7 +45,7 @@ export function GoalsPanel({
     mutationFn: generateGoals,
     onSuccess: (data) => {
       const kpis =
-        data.tasks?.complex_kpis?.map((item: any) => ({
+        data.tasks?.complex_kpis?.map((item: { kpi_name: string; description: string }) => ({
           title: item.kpi_name,
           description: item.description,
         })) || []
@@ -119,9 +119,9 @@ export function GoalsPanel({
       await onRunTask(currentGoal.description)
       toast.success(`Completed: ${currentGoal.title}`, { id: runToastId })
       setExecutionStatus((prev) => ({ ...prev, [index]: 'completed' }))
-    } catch (error: any) {
+    } catch (error) {
       setExecutionStatus((prev) => ({ ...prev, [index]: 'failed' }))
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         toast.info('Execution stopped.', { id: runToastId })
       } else {
         toast.error(`Error on goal: ${currentGoal.title}`, { id: runToastId })

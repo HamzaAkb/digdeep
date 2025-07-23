@@ -57,7 +57,7 @@ const measureTextWidth = (text: string, font: string): number => {
   return context.measureText(text).width
 }
 
-const isNumeric = (value: any): boolean => {
+const isNumeric = (value: string | number): boolean => {
   if (typeof value === 'number') return true
   if (typeof value !== 'string') return false
   return !isNaN(parseFloat(value)) && isFinite(Number(value))
@@ -125,9 +125,9 @@ export function FileViewerPanel({
 }: FileViewerPanelProps) {
   const [textContent, setTextContent] = useState<string>('')
   const [imageUrl, setImageUrl] = useState<string>('')
-  const [tableData, setTableData] = useState<Record<string, any>[]>([])
+  const [tableData, setTableData] = useState<Record<string, string | number>[]>([])
   const [tableColumns, setTableColumns] = useState<
-    ColumnDef<Record<string, any>>[]
+    ColumnDef<Record<string, string | number>>[]
   >([])
 
   const [sorting, setSorting] = useState<SortingState>([])
@@ -179,7 +179,7 @@ export function FileViewerPanel({
           header: true,
           skipEmptyLines: true,
           complete: (results) => {
-            const data = results.data as Record<string, any>[]
+            const data = results.data as Record<string, string | number>[]
             const headers = (results.meta.fields as string[]) || []
 
             const newColumnSizing: ColumnSizingState = {}
@@ -202,16 +202,16 @@ export function FileViewerPanel({
               )
             })
 
-            const columns: ColumnDef<Record<string, any>>[] = headers.map(
+            const columns: ColumnDef<Record<string, string | number>>[] = headers.map(
               (header: string) => ({
                 accessorKey: header,
                 header: header,
                 size: newColumnSizing[header],
-                cell: (info: CellContext<Record<string, any>, any>) =>
+                cell: (info: CellContext<Record<string, string | number>, string | number>) =>
                   info.getValue(),
                 aggregationFn: isNumeric(data[0]?.[header]) ? 'sum' : undefined,
                 aggregatedCell: (
-                  info: CellContext<Record<string, any>, any>
+                  info: CellContext<Record<string, string | number>, string | number>
                 ) => {
                   const value = info.getValue()
                   if (typeof value !== 'number') return null

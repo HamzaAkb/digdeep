@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { apiFetch } from '@/lib/api'
-import { auth } from '@/lib/auth'
 
 const confirmEmailSearchSchema = z.object({
   token: z.string(),
@@ -26,7 +25,7 @@ export const Route = createFileRoute('/confirm-email')({
       throw redirect({
         to: '/dashboard',
       })
-    } catch (error: any) {
+    } catch (error) {
       console.error('Email confirmation failed:', error)
       throw redirect({
         to: '/',

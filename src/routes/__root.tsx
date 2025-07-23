@@ -1,7 +1,5 @@
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import type { auth } from '@/lib/auth'
@@ -25,9 +23,6 @@ function RootComponent() {
         </div>
 
         <Toaster richColors />
-
-        {/* <ReactQueryDevtools />
-        <TanStackRouterDevtools /> */}
       </ThemeProvider>
     </QueryClientProvider>
   )

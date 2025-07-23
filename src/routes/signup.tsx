@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -18,6 +18,13 @@ import { signupUser } from '@/lib/api'
 import { Separator } from '@/components/ui/separator'
 
 export const Route = createFileRoute('/signup')({
+  beforeLoad: ({ context }) => {
+    if (context.auth.isAuthenticated()) {
+      throw redirect({
+        to: '/dashboard',
+      })
+    }
+  },
   component: SignupComponent,
 })
 

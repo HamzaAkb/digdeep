@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Paperclip, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 
@@ -24,7 +24,7 @@ export function FileUploader({ files, onFilesChange }: Props) {
 
   return (
     <div>
-      <div className='flex items-center'>
+      <div className='flex items-center justify-between'>
         <Label>Upload Files</Label>
         <Button
           type='button'
@@ -32,7 +32,7 @@ export function FileUploader({ files, onFilesChange }: Props) {
           size='icon'
           onClick={() => fileInputRef.current?.click()}
         >
-          <Paperclip className='h-4 w-4' />
+          <Plus className='h-4 w-4' />
         </Button>
         <input
           type='file'

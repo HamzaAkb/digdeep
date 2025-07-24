@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -21,6 +22,11 @@ import { Route as AuthenticatedLayoutDashboardRouteImport } from './routes/_auth
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
@@ -63,6 +69,7 @@ const AuthenticatedLayoutDashboardRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/confirm-email': typeof ConfirmEmailRoute
+  '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/downloads/$fileId': typeof DownloadsFileIdRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/confirm-email': typeof ConfirmEmailRoute
+  '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/downloads/$fileId': typeof DownloadsFileIdRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/confirm-email': typeof ConfirmEmailRoute
+  '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/downloads/$fileId': typeof DownloadsFileIdRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/confirm-email'
+    | '/login'
     | '/signup'
     | '/downloads/$fileId'
     | '/share/$shareToken'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/confirm-email'
+    | '/login'
     | '/signup'
     | '/downloads/$fileId'
     | '/share/$shareToken'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/confirm-email'
+    | '/login'
     | '/signup'
     | '/downloads/$fileId'
     | '/share/$shareToken'
@@ -124,6 +136,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ConfirmEmailRoute: typeof ConfirmEmailRoute
+  LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   DownloadsFileIdRoute: typeof DownloadsFileIdRoute
   ShareShareTokenRoute: typeof ShareShareTokenRoute
@@ -136,6 +149,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirm-email': {
@@ -207,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ConfirmEmailRoute: ConfirmEmailRoute,
+  LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   DownloadsFileIdRoute: DownloadsFileIdRoute,
   ShareShareTokenRoute: ShareShareTokenRoute,

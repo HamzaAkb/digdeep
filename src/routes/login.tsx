@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -14,10 +14,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { signupUser } from '@/lib/api'
+import { loginUser } from '@/lib/api'
 import { Separator } from '@/components/ui/separator'
 
-export const Route = createFileRoute('/signup')({
+export const Route = createFileRoute('/login')({
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated()) {
       throw redirect({
@@ -25,17 +25,20 @@ export const Route = createFileRoute('/signup')({
       })
     }
   },
-  component: SignupComponent,
+  component: LoginComponent,
 })
 
-function SignupComponent() {
+function LoginComponent() {
   const navigate = useNavigate()
+  const { auth: authContext } = Route.useRouteContext()
 
   const { mutate, isPending } = useMutation({
-    mutationFn: signupUser,
-    onSuccess: () => {
-      toast.success('Confirmation email sent! Please check your inbox.')
-      navigate({ to: '/' })
+    mutationFn: loginUser,
+    onSuccess: (data) => {
+      authContext.setToken(data.access_token)
+      authContext.setUser(data.user_details)
+      toast.success('Login successful!')
+      navigate({ to: '/dashboard' })
     },
     onError: (err) => {
       toast.error(err.message)
@@ -44,13 +47,19 @@ function SignupComponent() {
 
   const form = useForm({
     defaultValues: {
-      name: '',
       username: '',
-      email: '',
       password: '',
     },
+
     onSubmit: async ({ value }) => {
-      mutate(value)
+      const params = new URLSearchParams()
+      params.append('grant_type', 'password')
+      params.append('username', value.username)
+      params.append('password', value.password)
+      params.append('scope', '')
+      params.append('client_id', '')
+      params.append('client_secret', '')
+      mutate(params)
     },
   })
 
@@ -65,37 +74,12 @@ function SignupComponent() {
           }}
         >
           <CardHeader>
-            <CardTitle className='text-2xl'>Create Account</CardTitle>
+            <CardTitle className='text-2xl'>Login</CardTitle>
             <CardDescription>
-              Enter your details to create a new account.
+              Enter your username below to login to your account.
             </CardDescription>
           </CardHeader>
           <CardContent className='grid gap-4 my-6'>
-            <form.Field
-              name='name'
-              validators={{
-                onBlur: ({ value }) =>
-                  !value ? 'Name is required' : undefined,
-              }}
-              children={(field) => (
-                <div className='grid'>
-                  <Label htmlFor={field.name}>Full Name</Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder='Your Name'
-                  />
-                  {field.state.meta.errors.length > 0 && (
-                    <em className='text-destructive text-sm'>
-                      {field.state.meta.errors.join(', ')}
-                    </em>
-                  )}
-                </div>
-              )}
-            />
             <form.Field
               name='username'
               validators={{
@@ -112,42 +96,6 @@ function SignupComponent() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder='yourusername'
-                  />
-                  {field.state.meta.errors.length > 0 && (
-                    <em className='text-destructive text-sm'>
-                      {field.state.meta.errors.join(', ')}
-                    </em>
-                  )}
-                </div>
-              )}
-            />
-            <form.Field
-              name='email'
-              validators={{
-                onBlur: ({ value }) => {
-                  if (!value) return 'Email is required'
-                  if (
-                    !String(value)
-                      .toLowerCase()
-                      .match(
-                        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-                      )
-                  ) {
-                    return 'Please enter a valid email'
-                  }
-                },
-              }}
-              children={(field) => (
-                <div className='grid'>
-                  <Label htmlFor={field.name}>Email</Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    type='email'
-                    placeholder='name@example.com'
                   />
                   {field.state.meta.errors.length > 0 && (
                     <em className='text-destructive text-sm'>
@@ -185,16 +133,16 @@ function SignupComponent() {
           </CardContent>
           <CardFooter className='flex flex-col gap-4'>
             <Button type='submit' className='w-full' disabled={isPending}>
-              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-              Create Account
+              {isPending && <Loader2 className='h-4 w-4 animate-spin' />}
+              Sign in
             </Button>
             <Separator className='mt-2' />
             <Button
               variant='link'
               type='button'
-              onClick={() => navigate({ to: '/login' })}
+              onClick={() => navigate({ to: '/signup' })}
             >
-              Back to Login
+              Create a new user
             </Button>
           </CardFooter>
         </form>

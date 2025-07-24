@@ -92,6 +92,7 @@ export const startSession = (data: {
     session_id: string
     name: string
     data_context: string
+    model: string
 }) => apiFetch('/session/start', { method: 'POST', body: JSON.stringify(data) })
 
 export const fetchSessionById = (sessionId: string) =>

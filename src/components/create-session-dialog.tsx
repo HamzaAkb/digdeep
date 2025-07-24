@@ -30,6 +30,12 @@ import {
   SelectValue,
 } from './ui/select'
 
+const models = [
+  { value: 'gpt-4.1', label: 'GPT 4.1' },
+  { value: 'gpt-4.1-mini', label: 'GPT 4.1 mini' },
+  { value: 'gpt-4.1-nano', label: 'GPT 4.1 nano' },
+]
+
 type Step = 'setup' | 'clarification'
 
 type DataSource = {
@@ -43,6 +49,7 @@ type StartSessionVariables = {
   data_context: string
   files: File[]
   data_sources: DataSource[]
+  model: string
 }
 
 type StartSessionData = {
@@ -65,6 +72,7 @@ export function CreateSessionDialog() {
       data_context: '',
       files: [] as File[],
       data_sources: [] as DataSource[],
+      model: 'gpt-4.1',
     },
     onSubmit: async ({ value }) => {
       if (step === 'setup') {
@@ -110,6 +118,7 @@ export function CreateSessionDialog() {
         session_id: newSessionId,
         name: values.name,
         data_context: values.data_context,
+        model: values.model,
       })
 
       const filteredDataSources = values.data_sources.filter(
@@ -246,6 +255,28 @@ export function CreateSessionDialog() {
                     </div>
                   )}
                 </form.Field>
+                <form.Field name='model'>
+                  {(field) => (
+                    <div className='grid gap-2'>
+                      <Label htmlFor={field.name}>Model</Label>
+                      <Select
+                        value={field.state.value}
+                        onValueChange={field.handleChange}
+                      >
+                        <SelectTrigger id={field.name} className='w-full'>
+                          <SelectValue placeholder='Select a model' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {models.map((model) => (
+                            <SelectItem key={model.value} value={model.value}>
+                              {model.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </form.Field>
                 <form.Field name='data_context'>
                   {(field) => (
                     <div className='grid gap-2'>
@@ -368,7 +399,7 @@ export function CreateSessionDialog() {
               </Button>
             )}
             <Button type='submit' disabled={isLoading} className='ml-auto'>
-              {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              {isLoading && <Loader2 className='h-4 w-4 animate-spin' />}
               {step === 'setup'
                 ? 'Create & Continue'
                 : 'Submit & Start Session'}

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { generateGoals } from '@/lib/api'
-import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
 import {
   Accordion,
@@ -159,12 +159,13 @@ export function GoalsPanel({
   return (
     <div className='space-y-6'>
       <div className='relative'>
-        <Input
+        <Textarea
           placeholder='Enter your main analysis goal...'
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
           disabled={generateMutation.isPending || isExecuting}
+          className='pr-12'
         />
         <Button
           size='icon'
